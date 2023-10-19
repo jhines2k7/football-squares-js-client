@@ -4,8 +4,14 @@ let contracts = {};
 let accounts = [];
 let web3 = null;
 
-function registerDOMEventListeners() {
-  
+// create a click event handler called claim square
+// when a square is clicked, the user's address and the square's coordinates are sent to the server
+// the server will then check if the square is available
+// if it is, the server will send a transaction to the blockchain to claim the square
+// if it is not, the server will send a message to the client that the square is not available
+// the client will then display a message to the user that the square is not available
+function claimSquare(event) {
+  event.target.textContent = "";
 }
 
 function registerSocketIOEventListeners() {
@@ -58,21 +64,22 @@ async function convertUsdToEther(amountInUsd) {
 
 document.addEventListener('DOMContentLoaded', () => {
   (async () => {
-    while (!window.ethereum) {
-      console.log('Waiting for MetaMask...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-
-    // Request access to user's MetaMask accounts
-    await window.ethereum.request({ method: 'eth_requestAccounts' })
-
-    web3 = new Web3(window.ethereum);
-
-    // Use web3.js
-    accounts = await web3.eth.getAccounts();
-
-    console.log(`Your accounts: ${accounts}`);
-
+    /*
+        while (!window.ethereum) {
+          console.log('Waiting for MetaMask...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    
+        // Request access to user's MetaMask accounts
+        await window.ethereum.request({ method: 'eth_requestAccounts' })
+    
+        web3 = new Web3(window.ethereum);
+    
+        // Use web3.js
+        accounts = await web3.eth.getAccounts();
+    
+        console.log(`Your accounts: ${accounts}`);
+    */
     var table = document.getElementById('squares-grid');
 
     // Outer loop to create rows
@@ -83,25 +90,27 @@ document.addEventListener('DOMContentLoaded', () => {
       for (var j = 0; j < 10; j++) {
         var cell = document.createElement('td');
         cell.textContent = 'Cell'; // Set content of the cell
+
+        cell.addEventListener('click', claimSquare);
+
         row.appendChild(cell);
       }
 
       // Add the row to the table
       table.appendChild(row);
     }
-/*
-    if(typeof accounts[0] !== 'undefined') {
-      socket = io('https://fsdev.generalsolutions43.com',
-      {
-        transports: ['websocket'],
-        query: {
-          address: accounts[0]
+    /*
+        if(typeof accounts[0] !== 'undefined') {
+          socket = io('https://fsdev.generalsolutions43.com',
+          {
+            transports: ['websocket'],
+            query: {
+              address: accounts[0]
+            }
+          });
+    
+          registerSocketIOEventListeners();
         }
-      });
-
-      registerDOMEventListeners();
-      registerSocketIOEventListeners();
-    }
-*/
+    */
   })();
 });

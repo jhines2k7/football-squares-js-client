@@ -1,0 +1,16 @@
+#game {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+#squares-grid {
+  border: 2px solid black;
+}
+
+#squares-grid td {
+  border: 2px solid black;
+  padding: 15px 30px;
+  cursor: pointer;
+}
