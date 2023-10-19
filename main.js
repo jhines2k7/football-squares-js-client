@@ -11,6 +11,11 @@ let web3 = null;
 // if it is not, the server will send a message to the client that the square is not available
 // the client will then display a message to the user that the square is not available
 function claimSquare(event) {
+  var row = event.target.getAttribute('data-row');
+  var col = event.target.getAttribute('data-col');
+
+  console.log('Clicked cell at row ' + row + ', col ' + col);
+
   event.target.textContent = "";
 }
 
@@ -90,6 +95,10 @@ document.addEventListener('DOMContentLoaded', () => {
       for (var j = 0; j < 10; j++) {
         var cell = document.createElement('td');
         cell.textContent = 'Cell'; // Set content of the cell
+
+        // Set data attributes for row and column numbers
+        cell.setAttribute('data-row', i);
+        cell.setAttribute('data-col', j);
 
         cell.addEventListener('click', claimSquare);
 
