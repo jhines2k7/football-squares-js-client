@@ -11,7 +11,7 @@ let gameId = null;
 
 let heartbeatInterval;
 
-const domain = 'http://localhost:8000';
+const domain = 'http://146.190.72.89:8000';
 
 const playerId = saveGUIDToCookie();
 
@@ -185,8 +185,7 @@ function registerSocketIOEventListeners() {
     // display players
     const players = game.players;
     let playerList = document.getElementById('player-list');
-    playerList.innerHTML = '';
-
+    
     for (const player in players) {
       if(players[player].player_id !== playerId) {
         let newPlayerLi = document.createElement('li');
