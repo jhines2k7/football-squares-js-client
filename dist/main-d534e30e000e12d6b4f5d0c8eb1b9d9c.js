@@ -68,7 +68,9 @@ function claimSquare(event) {
 
   console.log('Clicked cell at row ' + row + ', col ' + column);
 
-  event.target.textContent = playerId;
+  let identicon = createIdenticon(playerId, 50);
+
+  event.target.appendChild(identicon);
   event.target.removeEventListener('click', claimSquare);
   event.target.style.backgroundColor = 'yellow';
 
@@ -118,7 +120,6 @@ function joinGame(gameId) {
     // Inner loop to create cells
     for (var j = 0; j < 10; j++) {
       var cell = document.createElement('td');
-      cell.textContent = 'Cell'; // Set content of the cell
 
       // Set data attributes for row and column numbers
       cell.setAttribute('data-row', i);
@@ -167,7 +168,7 @@ function registerSocketIOEventListeners() {
     console.log(`Player info: ${JSON.stringify(data.player)}`);
     console.log(`Games list: ${JSON.stringify(data.games_list)}`);
     const player = data.player;
-    playerIdH3.textContent = `Player ID: ${player.player_id}`;
+    playerIdH3.textContent = player.player_id;
 
     generateGamesList(data.games_list, document.getElementById('games'));
   });
@@ -175,8 +176,12 @@ function registerSocketIOEventListeners() {
   socket.on('game_joined', (game) => {
     console.log(`Game joined: ${JSON.stringify(game)}`);
     gameId = game.game_id;
-    gameIdH2.textContent = `Game ID: ${gameId}`;
-    gameNameH4.textContent = `Game Name: ${game.name}`;
+    gameIdH2.textContent = gameId;
+    gameNameH4.textContent = game.name;
+
+    let yourIdenticon = createIdenticon(playerId, 80);
+    let yourIdenticonSpan = document.getElementById('your-identicon');
+    yourIdenticonSpan.appendChild(yourIdenticon);
 
     // mark claimed squares
     const claimedSquares = game.claimed_squares;
@@ -185,7 +190,8 @@ function registerSocketIOEventListeners() {
       const claimedBy = value;
       let [row, column] = key.split('');
       const cell = selectTableCell(row, column);
-      cell.textContent = claimedBy;
+      let identicon = createIdenticon(claimedBy, 50);
+      cell.appendChild(identicon);
       cell.removeEventListener('click', claimSquare);
       cell.style.backgroundColor = 'yellow';
     }
@@ -197,15 +203,9 @@ function registerSocketIOEventListeners() {
 
     for (const player in players) {
       if (players[player].player_id !== playerId) {
-        let newPlayerLi = document.createElement('li');
-        // newPlayerLi.textContent = players[player].player_id;
+        let newPlayerLi = document.createElement('li');        
 
-        // let jdenticonSvg = document.createElement('svg');
-        // jdenticonSvg.setAttribute('data-jdenticon-value', players[player].player_id);
-        // jdenticonSvg.setAttribute('width', '40');
-        // jdenticonSvg.setAttribute('height', '40');
-
-        let identicon = createIdenticon(players[player].player_id, 40);
+        let identicon = createIdenticon(players[player].player_id, 30);
         newPlayerLi.appendChild(identicon);
 
         playerList.appendChild(newPlayerLi);
@@ -217,7 +217,9 @@ function registerSocketIOEventListeners() {
   socket.on('square_claimed', (data) => {
     console.log(`Square claimed: ${JSON.stringify(data)}`);
     const cell = selectTableCell(data.row, data.column);
-    cell.textContent = data.claimed_by;
+    let identicon = createIdenticon(data.claimed_by, 50);
+    cell.appendChild(identicon);
+    // cell.textContent = data.claimed_by;
     cell.removeEventListener('click', claimSquare);
     cell.style.backgroundColor = 'yellow';
   });
@@ -228,7 +230,9 @@ function registerSocketIOEventListeners() {
 
     let playerList = document.getElementById('player-list');
     let newPlayerLi = document.createElement('li');
-    newPlayerLi.textContent = newPlayer.player_id;
+    let identicon = createIdenticon(newPlayer.player_id, 30);
+    newPlayerLi.appendChild(identicon);
+    // newPlayerLi.textContent = newPlayer.player_id;
     playerList.appendChild(newPlayerLi);
   });
 }
@@ -283,9 +287,9 @@ async function loadContractABI() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  gameIdH2 = document.querySelector('#header h2');
-  playerIdH3 = document.querySelector('#header h3');
-  gameNameH4 = document.querySelector('#header h4');
+  gameIdH2 = document.querySelector('#header h2 span');
+  playerIdH3 = document.querySelector('#header h3 span');
+  gameNameH4 = document.querySelector('#header h4 span');
 
   socket = io(domain,
     {
