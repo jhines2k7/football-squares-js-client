@@ -23,7 +23,7 @@ if [ "$environment" == "prod" ]; then
 elif [ "$environment" == "test" ]; then
   domain="test.wss1.crypto-rockpaperscissors.com"
 elif [ "$environment" == "dev" ]; then
-  domain="146.190.72.89:8000"
+  domain="fs.generalsolutions43.com"
 else
   echo "Invalid environment specified. Please use 'prod', 'test', or 'dev'."
   exit 1
@@ -65,6 +65,6 @@ cp $html_file $dist_folder
 
 # Update the HTML file in the dist folder with the new JavaScript file name and domain
 sed -i 's|'$(basename $js_file)'|'$(basename $new_js_file)'|g' $dist_folder/$html_file
-sed -i 's|http://localhost:8000|http://'"$domain"'|g' $new_js_file
+sed -i 's|http://localhost:8000|https://'"$domain"'|g' $new_js_file
 
 echo "Cache busting done. JS file copied to dist and HTML reference updated."

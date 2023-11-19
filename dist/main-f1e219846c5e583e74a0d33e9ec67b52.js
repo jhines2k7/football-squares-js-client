@@ -11,9 +11,23 @@ let gameId = null;
 
 let heartbeatInterval;
 
-const domain = 'http://146.190.72.89:8000';
+const domain = 'https://fs.generalsolutions43.com';
 
 const playerId = saveGUIDToCookie();
+
+function createIdenticon(hashValue, size) {
+  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttributeNS(null, "width", size);
+  svg.setAttributeNS(null, "height", size);
+  svg.setAttributeNS(null, "data-jdenticon-value", hashValue);
+  return svg;
+}
+
+function appendIdenticon(hashValue, size, targetElement) {
+  var identicon = createIdenticon(hashValue, size);
+  document.querySelector(targetElement).appendChild(identicon);
+  jdenticon.update(identicon);
+}
 
 function saveGUIDToCookie() {
   // Check if a GUID already exists in the cookie
@@ -43,16 +57,9 @@ function generateGUID() {
 };
 
 function clearGUIDCookie() {
-  // Set the GUID cookie to expire immediately
   document.cookie = "guid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 }
 
-// create a click event handler called claim square
-// when a square is clicked, the user's address and the square's coordinates are sent to the server
-// the server will then check if the square is available
-// if it is, the server will send a transaction to the blockchain to claim the square
-// if it is not, the server will send a message to the client that the square is not available
-// the client will then display a message to the user that the square is not available
 function claimSquare(event) {
   clearInterval(heartbeatInterval);
 
@@ -79,6 +86,7 @@ function selectTableCell(dataRow, dataColumn) {
 }
 
 function generateGamesList(arr, ul) {
+  ul.innerHTML = '';
   // Loop through the array
   for (let i = 0; i < arr.length; i++) {
     // Create a new li for each item in the array
@@ -99,7 +107,7 @@ function generateGamesList(arr, ul) {
 function joinGame(gameId) {
   console.log("Clicked game with id: " + gameId);
   socket.emit('join_game', { game_id: gameId, player_id: playerId });
-  
+
   // create the squares grid
   var table = document.getElementById('squares-grid');
 
@@ -135,19 +143,19 @@ function joinGame(gameId) {
 
 function loadTemplate(name, element) {
   fetch(name)
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.text();
-  })
-  .then(data => {
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.text();
+    })
+    .then(data => {
       // document.getElementById('test').innerHTML = data;
       element.innerHTML = data;
-  })
-  .catch(error => {
-    console.log('There has been a problem with your fetch operation: ', error);
-  });
+    })
+    .catch(error => {
+      console.log('There has been a problem with your fetch operation: ', error);
+    });
 }
 
 function registerSocketIOEventListeners() {
@@ -172,7 +180,7 @@ function registerSocketIOEventListeners() {
 
     // mark claimed squares
     const claimedSquares = game.claimed_squares;
-    for(const [key, value] of Object.entries(claimedSquares)) {
+    for (const [key, value] of Object.entries(claimedSquares)) {
       console.log(value);
       const claimedBy = value;
       let [row, column] = key.split('');
@@ -185,12 +193,23 @@ function registerSocketIOEventListeners() {
     // display players
     const players = game.players;
     let playerList = document.getElementById('player-list');
-    
+    playerList.innerHTML = '';
+
     for (const player in players) {
-      if(players[player].player_id !== playerId) {
+      if (players[player].player_id !== playerId) {
         let newPlayerLi = document.createElement('li');
-        newPlayerLi.textContent = players[player].player_id;
+        // newPlayerLi.textContent = players[player].player_id;
+
+        // let jdenticonSvg = document.createElement('svg');
+        // jdenticonSvg.setAttribute('data-jdenticon-value', players[player].player_id);
+        // jdenticonSvg.setAttribute('width', '40');
+        // jdenticonSvg.setAttribute('height', '40');
+
+        let identicon = createIdenticon(players[player].player_id, 40);
+        newPlayerLi.appendChild(identicon);
+
         playerList.appendChild(newPlayerLi);
+        // appendIdenticon(players[player].player_id, 40, newPlayerLi);
       }
     }
   });
@@ -267,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
   gameIdH2 = document.querySelector('#header h2');
   playerIdH3 = document.querySelector('#header h3');
   gameNameH4 = document.querySelector('#header h4');
-  
+
   socket = io(domain,
     {
       transports: ['websocket'],
