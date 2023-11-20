@@ -95,7 +95,7 @@ function generateGamesList(arr, ul) {
     let a = document.createElement('a');
     a.setAttribute('href', `#game/${arr[i].game_id}`);
     a.textContent = arr[i].name;
-    
+
     let li = document.createElement('li');
     li.appendChild(a);
 
@@ -103,7 +103,7 @@ function generateGamesList(arr, ul) {
   }
 }
 
-function joinGame(gameId) {  
+function joinGame(gameId) {
   console.log("Clicked game with id: " + gameId);
   socket.emit('join_game', { game_id: gameId, player_id: playerId });
 
@@ -160,7 +160,7 @@ function registerSocketIOEventListeners() {
     const currentLocation = router.getCurrentLocation();
     console.log(`Current route location: ${JSON.stringify(currentLocation)}`);
 
-    if(currentLocation.route.name === '') {
+    if (currentLocation.route.name === '') {
       generateGamesList(data.games_list, document.getElementById('games-list'));
     }
   });
@@ -201,7 +201,7 @@ function registerSocketIOEventListeners() {
 
     for (const player in players) {
       if (players[player].player_id !== playerId) {
-        let newPlayerLi = document.createElement('li');        
+        let newPlayerLi = document.createElement('li');
 
         let identicon = createIdenticon(players[player].player_id, 50);
         newPlayerLi.appendChild(identicon);
@@ -212,13 +212,14 @@ function registerSocketIOEventListeners() {
   });
 
   socket.on('square_claimed', (data) => {
-    console.log(`Square claimed: ${JSON.stringify(data)}`);
-    const cell = selectTableCell(data.row, data.column);
-    let identicon = createIdenticon(data.claimed_by, 50);
-    cell.appendChild(identicon);
-    // cell.textContent = data.claimed_by;
-    cell.removeEventListener('click', claimSquare);
-    cell.style.backgroundColor = 'yellow';
+    if (data.game_id === gameId) {
+      console.log(`Square claimed: ${JSON.stringify(data)}`);
+      const cell = selectTableCell(data.row, data.column);
+      let identicon = createIdenticon(data.claimed_by, 50);
+      cell.appendChild(identicon);
+      cell.removeEventListener('click', claimSquare);
+      cell.style.backgroundColor = 'yellow';
+    }
   });
 
   socket.on('new_player_joined', (player) => {
@@ -227,7 +228,7 @@ function registerSocketIOEventListeners() {
 
     let playerList = document.getElementById('player-list');
     let newPlayerLi = document.createElement('li');
-    let identicon = createIdenticon(newPlayer.player_id, 30);
+    let identicon = createIdenticon(newPlayer.player_id, 50);
     newPlayerLi.appendChild(identicon);
     // newPlayerLi.textContent = newPlayer.player_id;
     playerList.appendChild(newPlayerLi);
@@ -313,14 +314,14 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log(`Match value on home route: ${JSON.stringify(match)}`);
 
       (async () => {
-        if(gameId) {
+        if (gameId) {
           const gamesList = await loadGameList();
           generateGamesList(gamesList, document.getElementById('games-list'));
         }
-      })();      
+      })();
     }, {
       before(done, match) {
-        (async() => {
+        (async () => {
           await loadTemplate("home.html", document.getElementById('app'));
           done();
         })();
@@ -328,11 +329,11 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .on("game/:gameId", (match) => {
       console.log(`Match value on game route: ${JSON.stringify(match)}`);
-      
+
       joinGame(match.data.gameId);
     }, {
       before(done, match) {
-        (async() => {
+        (async () => {
           await loadTemplate("game.html", document.getElementById('app'));
           done();
         })();
