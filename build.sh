@@ -57,6 +57,8 @@ cp $js_file $new_js_file
 # Copy all .css files to the dist folder
 cp *.css $dist_folder
 
+cp -r lib $dist_folder
+
 # Copy the fonts folder to the dist folder
 # cp -r fonts $dist_folder
 

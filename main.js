@@ -64,6 +64,8 @@ function clearGUIDCookie() {
 function claimSquare(event) {
   clearInterval(heartbeatInterval);
 
+  explode(event);
+
   var row = event.target.getAttribute('data-row');
   var column = event.target.getAttribute('data-col');
 
@@ -215,6 +217,18 @@ function registerSocketIOEventListeners() {
     if (data.game_id === gameId) {
       console.log(`Square claimed: ${JSON.stringify(data)}`);
       const cell = selectTableCell(data.row, data.column);
+      
+      let rect = cell.getBoundingClientRect();
+      let xPosition = rect.left + window.scrollX;
+      let yPosition = rect.top + window.scrollY;
+
+      const event = {
+        clientX: xPosition,
+        clientY: yPosition
+      };
+
+      explode(event);
+
       let identicon = createIdenticon(data.claimed_by, 50);
       cell.appendChild(identicon);
       cell.removeEventListener('click', claimSquare);
@@ -228,9 +242,15 @@ function registerSocketIOEventListeners() {
 
     let playerList = document.getElementById('player-list');
     let newPlayerLi = document.createElement('li');
+    newPlayerLi.classList.add('fade-in');
+
     let identicon = createIdenticon(newPlayer.player_id, 50);
+
+    setTimeout(() => {
+      newPlayerLi.style.opacity = 1;
+    }, 10);
+
     newPlayerLi.appendChild(identicon);
-    // newPlayerLi.textContent = newPlayer.player_id;
     playerList.appendChild(newPlayerLi);
   });
 }
