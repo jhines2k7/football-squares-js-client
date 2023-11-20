@@ -15,6 +15,8 @@ const domain = 'https://fs.generalsolutions43.com';
 
 const playerId = saveGUIDToCookie();
 
+const router = new Navigo('/', { hash: true });
+
 function createIdenticon(hashValue, size) {
   var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttributeNS(null, "width", size);
@@ -91,22 +93,21 @@ function generateGamesList(arr, ul) {
   ul.innerHTML = '';
   // Loop through the array
   for (let i = 0; i < arr.length; i++) {
-    // Create a new li for each item in the array
+    let a = document.createElement('a');
+    a.setAttribute('href', `#game/${arr[i].game_id}`);
+    a.textContent = arr[i].name;
+    
     let li = document.createElement('li');
-
-    // Set the text content of the li to the name property of the current object
-    li.textContent = arr[i].name;
-
-    li.addEventListener('click', function () {
-      joinGame(arr[i].game_id);
-    });
-
-    // Append the li to the ul
+    // li.textContent = arr[i].name;
+    // li.addEventListener('click', function () {
+    //   router.navigate(`game/${arr[i].game_id}`);
+    // });
+    li.appendChild(a);
     ul.appendChild(li);
   }
 }
 
-function joinGame(gameId) {
+function joinGame(gameId) {  
   console.log("Clicked game with id: " + gameId);
   socket.emit('join_game', { game_id: gameId, player_id: playerId });
 
@@ -134,16 +135,13 @@ function joinGame(gameId) {
     table.appendChild(row);
   }
 
-  const gamesList = document.getElementById('games');
-  gamesList.remove();
-
   // display the player list
   const playersDiv = document.getElementById('players');
   playersDiv.style.display = 'block';
 }
 
-function loadTemplate(name, element) {
-  fetch(name)
+async function loadTemplate(name, element) {
+  return fetch(`templates/${name}`)
     .then(response => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -167,15 +165,24 @@ function registerSocketIOEventListeners() {
   socket.on('connected', (data) => {
     console.log(`Player info: ${JSON.stringify(data.player)}`);
     console.log(`Games list: ${JSON.stringify(data.games_list)}`);
-    const player = data.player;
-    playerIdH3.textContent = player.player_id;
 
-    generateGamesList(data.games_list, document.getElementById('games'));
+    const currentLocation = router.getCurrentLocation();
+    console.log(`Current route location: ${JSON.stringify(currentLocation)}`);
+
+    if(currentLocation.route.name === '#') {
+      generateGamesList(data.games_list, document.getElementById('games-list'));
+    }
   });
 
   socket.on('game_joined', (game) => {
     console.log(`Game joined: ${JSON.stringify(game)}`);
+
+    let gameIdH2 = document.querySelector('#app h2 span');
+    let playerIdH3 = document.querySelector('#app h3 span');
+    let gameNameH4 = document.querySelector('#app h4 span');
+
     gameId = game.game_id;
+    playerIdH3.textContent = playerId;
     gameIdH2.textContent = gameId;
     gameNameH4.textContent = game.name;
 
@@ -286,11 +293,21 @@ async function loadContractABI() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  gameIdH2 = document.querySelector('#header h2 span');
-  playerIdH3 = document.querySelector('#header h3 span');
-  gameNameH4 = document.querySelector('#header h4 span');
+async function loadGameList() {
+  return fetch(`${domain}/games?player_id=${playerId}&game_id=${gameId}`)
+    .then(response => response.json())
+    .then(data => {
+      // Use the loaded JSON data here
+      console.log(`The games list is ${data}`)
+      return data;
+    })
+    .catch(error => {
+      // Handle any potential errors
+      console.error(`Error: ${error}`);
+    });
+}
 
+document.addEventListener('DOMContentLoaded', () => {
   socket = io(domain,
     {
       transports: ['websocket'],
@@ -300,4 +317,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
   registerSocketIOEventListeners();
+
+  router
+    .on((match) => {
+      console.log(`Match value on home route: ${JSON.stringify(match)}`);
+
+      (async () => {
+        if(gameId) {
+          const gamesList = await loadGameList();
+          generateGamesList(gamesList, document.getElementById('games-list'));
+        }
+      })();      
+    }, {
+      before(done, match) {
+        (async() => {
+          await loadTemplate("home.html", document.getElementById('app'));
+          done();
+        })();
+      }
+    })
+    .on("game/:gameId", (match) => {
+      console.log(`Match value on game route: ${JSON.stringify(match)}`);
+      
+      joinGame(match.data.gameId);
+    }, {
+      before(done, match) {
+        (async() => {
+          await loadTemplate("game.html", document.getElementById('app'));
+          done();
+        })();
+      }
+    })
+    .resolve();
 });

@@ -60,6 +60,9 @@ cp *.css $dist_folder
 # Copy the fonts folder to the dist folder
 # cp -r fonts $dist_folder
 
+# Copy the templates folder to the dist folder
+cp -r templates $dist_folder
+
 # Copy the HTML file to the dist folder
 cp $html_file $dist_folder
 
