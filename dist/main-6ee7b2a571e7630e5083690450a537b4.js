@@ -7,7 +7,6 @@ let gameIdH2 = null;
 let playerIdH3 = null;
 let gameNameH4 = null;
 let gameId = null;
-// let playerList = null;
 
 let heartbeatInterval;
 
@@ -98,11 +97,8 @@ function generateGamesList(arr, ul) {
     a.textContent = arr[i].name;
     
     let li = document.createElement('li');
-    // li.textContent = arr[i].name;
-    // li.addEventListener('click', function () {
-    //   router.navigate(`game/${arr[i].game_id}`);
-    // });
     li.appendChild(a);
+
     ul.appendChild(li);
   }
 }
@@ -134,10 +130,6 @@ function joinGame(gameId) {
     // Add the row to the table
     table.appendChild(row);
   }
-
-  // display the player list
-  const playersDiv = document.getElementById('players');
-  playersDiv.style.display = 'block';
 }
 
 async function loadTemplate(name, element) {
@@ -149,7 +141,6 @@ async function loadTemplate(name, element) {
       return response.text();
     })
     .then(data => {
-      // document.getElementById('test').innerHTML = data;
       element.innerHTML = data;
     })
     .catch(error => {
@@ -169,7 +160,7 @@ function registerSocketIOEventListeners() {
     const currentLocation = router.getCurrentLocation();
     console.log(`Current route location: ${JSON.stringify(currentLocation)}`);
 
-    if(currentLocation.route.name === '#') {
+    if(currentLocation.route.name === '') {
       generateGamesList(data.games_list, document.getElementById('games-list'));
     }
   });
@@ -178,11 +169,11 @@ function registerSocketIOEventListeners() {
     console.log(`Game joined: ${JSON.stringify(game)}`);
 
     let gameIdH2 = document.querySelector('#app h2 span');
-    let playerIdH3 = document.querySelector('#app h3 span');
+    // let playerIdH3 = document.querySelector('#app h3 span');
     let gameNameH4 = document.querySelector('#app h4 span');
 
     gameId = game.game_id;
-    playerIdH3.textContent = playerId;
+    // playerIdH3.textContent = playerId;
     gameIdH2.textContent = gameId;
     gameNameH4.textContent = game.name;
 
@@ -212,11 +203,10 @@ function registerSocketIOEventListeners() {
       if (players[player].player_id !== playerId) {
         let newPlayerLi = document.createElement('li');        
 
-        let identicon = createIdenticon(players[player].player_id, 30);
+        let identicon = createIdenticon(players[player].player_id, 50);
         newPlayerLi.appendChild(identicon);
 
         playerList.appendChild(newPlayerLi);
-        // appendIdenticon(players[player].player_id, 40, newPlayerLi);
       }
     }
   });
