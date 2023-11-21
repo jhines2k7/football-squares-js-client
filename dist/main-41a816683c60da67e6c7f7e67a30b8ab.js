@@ -217,7 +217,7 @@ function registerSocketIOEventListeners() {
     if (data.game_id === gameId) {
       console.log(`Square claimed: ${JSON.stringify(data)}`);
       const cell = selectTableCell(data.row, data.column);
-      
+
       let rect = cell.getBoundingClientRect();
       let xPosition = rect.left + window.scrollX;
       let yPosition = rect.top + window.scrollY;
@@ -255,8 +255,8 @@ function registerSocketIOEventListeners() {
     const player = data.player;
     const game = data.game;
 
-    if(game.game_id === gameId) {
-      console.log(`Player left game: ${JSON.stringify(player.player_id)}`);
+    if (game.game_id === gameId) {
+      console.log(`Player left game: ${JSON.stringify(player)}`);
 
       let playerList = document.getElementById('player-list');
       let players = playerList.getElementsByTagName('li');
@@ -270,21 +270,39 @@ function registerSocketIOEventListeners() {
         }
       }
 
-      let claimedSquares = player.claimedSquares;
-      for(let square in claimedSquares) {        
-        unclaimSquare(square, gameId, playerId);
+      let claimedSquares = player.games[gameId].claimed_squares;
+
+      let i = 1;
+      for (let square in claimedSquares) {
+        setTimeout(() => {
+          unclaimSquare(claimedSquares[square], gameId, playerId);
+        }, i * 100);
+        i++;
       }
-    }    
+    }
   });
 }
 
 function unclaimSquare(square, gameId, playerId) {
   console.log(`Unclaiming square: ${JSON.stringify(square)}`);
-  let {row, column} = square;
+  let { row, column } = square;
   let cell = selectTableCell(row, column);
+
+  let rect = cell.getBoundingClientRect();
+  let xPosition = rect.left + window.scrollX;
+  let yPosition = rect.top + window.scrollY;
+
+  const event = {
+    clientX: xPosition + 25,
+    clientY: yPosition + 25
+  };
+
+  explode(event);
+
   cell.style.backgroundColor = 'white';
   cell.innerHTML = '';
   cell.addEventListener('click', claimSquare);
+
   socket.emit('unclaim_square', { square: square, game_id: gameId, player_id: playerId });
 }
 
@@ -363,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
   registerSocketIOEventListeners();
 
   router
-    .on("/",(match) => {
+    .on("/", (match) => {
       console.log(`Match value on home route: ${JSON.stringify(match)}`);
 
       (async () => {
@@ -388,11 +406,11 @@ document.addEventListener('DOMContentLoaded', () => {
       before(done, match) {
         (async () => {
           await loadTemplate("game.html", document.getElementById('app'));
-          
+
           let a = document.createElement('a');
           a.setAttribute('href', `#/leave/${match.data.gameId}`);
           a.textContent = 'Leave Game';
-          
+
           let nav = document.querySelector('#game-info .home');
           nav.appendChild(a);
 
