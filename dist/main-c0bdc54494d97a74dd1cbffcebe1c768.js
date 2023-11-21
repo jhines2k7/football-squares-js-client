@@ -223,8 +223,8 @@ function registerSocketIOEventListeners() {
       let yPosition = rect.top + window.scrollY;
 
       const event = {
-        clientX: xPosition,
-        clientY: yPosition
+        clientX: xPosition + 25,
+        clientY: yPosition + 25
       };
 
       explode(event);
@@ -246,13 +246,46 @@ function registerSocketIOEventListeners() {
 
     let identicon = createIdenticon(newPlayer.player_id, 50);
 
-    setTimeout(() => {
-      newPlayerLi.style.opacity = 1;
-    }, 10);
-
     newPlayerLi.appendChild(identicon);
     playerList.appendChild(newPlayerLi);
   });
+
+
+  socket.on('player_left_game', (data) => {
+    const player = data.player;
+    const game = data.game;
+
+    if(game.game_id === gameId) {
+      console.log(`Player left game: ${JSON.stringify(player.player_id)}`);
+
+      let playerList = document.getElementById('player-list');
+      let players = playerList.getElementsByTagName('li');
+
+      for (let i = 0; i < players.length; i++) {
+        if (players[i].firstChild.getAttribute('data-jdenticon-value') === player.player_id) {
+          players[i].classList.add('fade-out');
+          setTimeout(() => {
+            players[i].remove();
+          }, 1100);
+        }
+      }
+
+      let claimedSquares = player.claimedSquares;
+      for(let square in claimedSquares) {        
+        unclaimSquare(square, gameId, playerId);
+      }
+    }    
+  });
+}
+
+function unclaimSquare(square, gameId, playerId) {
+  console.log(`Unclaiming square: ${JSON.stringify(square)}`);
+  let {row, column} = square;
+  let cell = selectTableCell(row, column);
+  cell.style.backgroundColor = 'white';
+  cell.innerHTML = '';
+  cell.addEventListener('click', claimSquare);
+  socket.emit('unclaim_square', { square: square, game_id: gameId, player_id: playerId });
 }
 
 async function dollarsToEthereum(dollars) {
@@ -330,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
   registerSocketIOEventListeners();
 
   router
-    .on((match) => {
+    .on("/",(match) => {
       console.log(`Match value on home route: ${JSON.stringify(match)}`);
 
       (async () => {
@@ -355,8 +388,28 @@ document.addEventListener('DOMContentLoaded', () => {
       before(done, match) {
         (async () => {
           await loadTemplate("game.html", document.getElementById('app'));
+          
+          let a = document.createElement('a');
+          a.setAttribute('href', `#/leave/${match.data.gameId}`);
+          a.textContent = 'Leave Game';
+          
+          let nav = document.querySelector('#game-info .home');
+          nav.appendChild(a);
+
           done();
         })();
+      }
+    })
+    .on("leave/:gameId", (match) => {
+      console.log(`Match value on leave route: ${JSON.stringify(match)}`);
+
+      router.navigate('/');
+    }, {
+      before(done, match) {
+
+        socket.emit('leave_game', { game_id: match.data.gameId, player_id: playerId });
+        gameId = null;
+        done();
       }
     })
     .resolve();
