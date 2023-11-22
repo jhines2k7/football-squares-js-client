@@ -62,7 +62,7 @@ function clearGUIDCookie() {
 }
 
 function claimSquare(event) {
-  clearInterval(heartbeatInterval);
+  // clearInterval(heartbeatInterval);
 
   explode(event);
 
@@ -77,11 +77,11 @@ function claimSquare(event) {
   event.target.removeEventListener('click', claimSquare);
   event.target.style.backgroundColor = 'yellow';
 
-  if (!heartbeatInterval) {
-    heartbeatInterval = setInterval(function () {
-      socket.emit('heartbeat', { player_id: playerId, ping: 'ping' })
-    }, 20000); // Send heartbeat every 20 seconds
-  }
+  // if (!heartbeatInterval) {
+  //   heartbeatInterval = setInterval(function () {
+  //     socket.emit('heartbeat', { player_id: playerId, ping: 'ping' })
+  //   }, 20000); // Send heartbeat every 20 seconds
+  // }
 
   socket.emit('claim_square', { row: row, column: column, player_id: playerId, game_id: gameId });
 }
@@ -372,7 +372,7 @@ async function loadGameList() {
     .then(response => response.json())
     .then(data => {
       // Use the loaded JSON data here
-      console.log(`The games list is ${data}`)
+      console.log(`The games list is ${JSON.stringify(data)}`)
       return data;
     })
     .catch(error => {
