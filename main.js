@@ -61,20 +61,37 @@ function clearGUIDCookie() {
   document.cookie = "guid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 }
 
+function getCellPlayerId(cell) {
+  return cell.firstChild.getAttribute('data-jdenticon-value');
+}
+
 function claimSquare(event) {
   // clearInterval(heartbeatInterval);
-
-  explode(event);
-
-  var row = event.target.getAttribute('data-row');
-  var column = event.target.getAttribute('data-col');
+  const row = event.currentTarget.getAttribute('data-row');
+  const column = event.currentTarget.getAttribute('data-col');
 
   console.log('Clicked cell at row ' + row + ', col ' + column);
+
+  const cell = selectTableCell(row, column);
+  // is cell already claimed?
+  if (cell.innerHTML !== '') {
+    // is cell claimed by current player?
+    if (getCellPlayerId(cell) === playerId) {
+      console.log(`Cell at row ${row}, column ${column} is already claimed by current player.`)
+      // unclaim square
+      unclaimSquare({ row: row, column: column }, gameId, playerId);
+      unmarkSquare({ row: row, column: column });
+    }
+
+    return;
+  }
+
+  explode(event);
 
   let identicon = createIdenticon(playerId, 50);
 
   event.target.appendChild(identicon);
-  event.target.removeEventListener('click', claimSquare);
+  // event.target.removeEventListener('click', claimSquare);
   event.target.style.backgroundColor = 'yellow';
 
   // if (!heartbeatInterval) {
@@ -155,6 +172,11 @@ function registerSocketIOEventListeners() {
     console.log(`Heartbeat received: ${JSON.stringify(data)}`);
   });
 
+  socket.on('game_not_found', (data) => {
+    console.log(`Game not found: ${JSON.stringify(data)}`);
+    router.navigate('');
+  });
+
   socket.on('connected', (data) => {
     console.log(`Player info: ${JSON.stringify(data.player)}`);
     console.log(`Games list: ${JSON.stringify(data.games_list)}`);
@@ -191,7 +213,7 @@ function registerSocketIOEventListeners() {
       const cell = selectTableCell(row, column);
       let identicon = createIdenticon(claimedBy, 50);
       cell.appendChild(identicon);
-      cell.removeEventListener('click', claimSquare);
+      // cell.removeEventListener('click', claimSquare);
       cell.style.backgroundColor = 'yellow';
     }
 
