@@ -162,7 +162,7 @@ function registerSocketIOEventListeners() {
     const currentLocation = router.getCurrentLocation();
     console.log(`Current route location: ${JSON.stringify(currentLocation)}`);
 
-    if (currentLocation.route.name === '') {
+    if (currentLocation.route.name === '#' || currentLocation.route.name === '') {
       generateGamesList(data.games_list, document.getElementById('games-list'));
     }
   });
@@ -186,7 +186,6 @@ function registerSocketIOEventListeners() {
     // mark claimed squares
     const claimedSquares = game.claimed_squares;
     for (const [key, value] of Object.entries(claimedSquares)) {
-      console.log(value);
       const claimedBy = value;
       let [row, column] = key.split('');
       const cell = selectTableCell(row, column);
@@ -258,33 +257,43 @@ function registerSocketIOEventListeners() {
     if (game.game_id === gameId) {
       console.log(`Player left game: ${JSON.stringify(player)}`);
 
-      let playerList = document.getElementById('player-list');
-      let players = playerList.getElementsByTagName('li');
-
-      for (let i = 0; i < players.length; i++) {
-        if (players[i].firstChild.getAttribute('data-jdenticon-value') === player.player_id) {
-          players[i].classList.add('fade-out');
-          setTimeout(() => {
-            players[i].remove();
-          }, 1100);
-        }
-      }
-
       let claimedSquares = player.games[gameId].claimed_squares;
 
       let i = 1;
       for (let square in claimedSquares) {
         setTimeout(() => {
-          unclaimSquare(claimedSquares[square], gameId, playerId);
-        }, i * 100);
+          unmarkSquare(claimedSquares[square]);
+        }, i * 150);
         i++;
+      }
+
+      let playerList = document.getElementById('player-list');
+      let players = playerList.getElementsByTagName('li');
+
+      for (let i = 0; i < players.length; i++) {
+        if (players[i].firstChild.getAttribute('data-jdenticon-value') === player.player_id) {
+          setTimeout(() => {
+            let rect = players[i].getBoundingClientRect();
+            let xPosition = rect.left + window.scrollX;
+            let yPosition = rect.top + window.scrollY;
+
+            const event = {
+              clientX: xPosition + 25,
+              clientY: yPosition + 25
+            };
+
+            players[i].remove();
+            explode(event);
+          }, 1500);
+        }
       }
     }
   });
 }
 
-function unclaimSquare(square, gameId, playerId) {
-  console.log(`Unclaiming square: ${JSON.stringify(square)}`);
+function unmarkSquare(square) {
+  console.log(`Unmarking square: ${JSON.stringify(square)}`);
+
   let { row, column } = square;
   let cell = selectTableCell(row, column);
 
@@ -302,7 +311,10 @@ function unclaimSquare(square, gameId, playerId) {
   cell.style.backgroundColor = 'white';
   cell.innerHTML = '';
   cell.addEventListener('click', claimSquare);
+}
 
+function unclaimSquare(square, gameId, playerId) {
+  console.log(`Unclaiming square: ${JSON.stringify(square)}`);
   socket.emit('unclaim_square', { square: square, game_id: gameId, player_id: playerId });
 }
 
@@ -356,7 +368,7 @@ async function loadContractABI() {
 }
 
 async function loadGameList() {
-  return fetch(`${domain}/games?player_id=${playerId}&game_id=${gameId}`)
+  return fetch(`${domain}/games?player_id=${playerId}`)
     .then(response => response.json())
     .then(data => {
       // Use the loaded JSON data here
@@ -381,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
   registerSocketIOEventListeners();
 
   router
-    .on("/", (match) => {
+    .on("*", (match) => {
       console.log(`Match value on home route: ${JSON.stringify(match)}`);
 
       (async () => {
@@ -408,7 +420,8 @@ document.addEventListener('DOMContentLoaded', () => {
           await loadTemplate("game.html", document.getElementById('app'));
 
           let a = document.createElement('a');
-          a.setAttribute('href', `#/leave/${match.data.gameId}`);
+          a.setAttribute('href', `/leave/${match.data.gameId}`);
+          a.setAttribute('data-navigo', '')
           a.textContent = 'Leave Game';
 
           let nav = document.querySelector('#game-info .home');
@@ -421,10 +434,9 @@ document.addEventListener('DOMContentLoaded', () => {
     .on("leave/:gameId", (match) => {
       console.log(`Match value on leave route: ${JSON.stringify(match)}`);
 
-      router.navigate('/');
+      router.navigate('');
     }, {
       before(done, match) {
-
         socket.emit('leave_game', { game_id: match.data.gameId, player_id: playerId });
         gameId = null;
         done();
