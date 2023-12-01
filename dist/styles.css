@@ -88,3 +88,33 @@ td {
   from { opacity: 1; }
   to { opacity: 0; }
 }
+
+.team-logo.titans {
+  width: 50px;
+  height: 40px;
+  overflow: hidden;
+  position: relative;
+}
+
+.team-logo embed {
+  position: absolute;
+  top: -15px;
+  left: -20px;
+  width: 760%;
+  height: auto;
+}
+
+.team-logo.patriots {
+  width: 70px;
+  height: 60px;
+  overflow: hidden;
+  position: relative;
+}
+
+.team-logo.patriots embed {
+  position: absolute;
+  top: -10px;
+  left: -95px;
+  width: 600%;
+  height: auto;
+}

@@ -7,12 +7,13 @@ let gameIdH2 = null;
 let playerIdH3 = null;
 let gameNameH4 = null;
 let gameId = null;
+let weekId = null;
 
 let heartbeatInterval;
 
 const domain = 'https://fs.generalsolutions43.com';
 
-const playerId = saveGUIDToCookie();
+const playerId = getPlayerId();
 
 const router = new Navigo('/', { hash: true });
 
@@ -30,7 +31,7 @@ function appendIdenticon(hashValue, size, targetElement) {
   jdenticon.update(identicon);
 }
 
-function saveGUIDToCookie() {
+function getPlayerId() {
   // Check if a GUID already exists in the cookie
   let guid = document.cookie.split('; ').find(row => row.startsWith('guid='));
 
@@ -69,20 +70,30 @@ function claimSquare(event) {
   // clearInterval(heartbeatInterval);
   const row = event.currentTarget.getAttribute('data-row');
   const column = event.currentTarget.getAttribute('data-col');
+  const gameId = event.currentTarget.getAttribute('data-game-id');
+  const weekId = event.currentTarget.getAttribute('data-week-id');
 
   console.log('Clicked cell at row ' + row + ', col ' + column);
 
   const cell = selectTableCell(row, column);
+  const square = { 
+    id: `${row}${column}`,
+    away_points: row, 
+    home_points: column,
+    player_id: playerId,
+    game_id: gameId,
+    week_id: weekId
+  };
+
   // is cell already claimed?
   if (cell.innerHTML !== '') {
     // is cell claimed by current player?
-    if (getCellPlayerId(cell) === playerId) {
-      console.log(`Cell at row ${row}, column ${column} is already claimed by current player.`)
+    if (getCellPlayerId(cell) === getPlayerId()) {
+      console.log(`Cell at row ${row}, column ${column} is already claimed by current player. Unclaiming square.`)
       // unclaim square
-      unclaimSquare({ row: row, column: column }, gameId, playerId);
-      unmarkSquare({ row: row, column: column });
+      unclaimSquare(square);
+      unmarkSquare(square);
     }
-
     return;
   }
 
@@ -99,21 +110,23 @@ function claimSquare(event) {
   //     socket.emit('heartbeat', { player_id: playerId, ping: 'ping' })
   //   }, 20000); // Send heartbeat every 20 seconds
   // }
-
-  socket.emit('claim_square', { row: row, column: column, player_id: playerId, game_id: gameId });
+  // row-major order, when means the value of the row is the first digit, and the value of the column is the second digit
+  socket.emit('claim_square', square);
 }
 
 function selectTableCell(dataRow, dataColumn) {
   return document.querySelector(`td[data-row='${dataRow}'][data-col='${dataColumn}']`);
 }
 
-function generateGamesList(arr, ul) {
+function generateGamesList(gamesList, ul) {
+  // console.log(`Generating games list: ${JSON.stringify(gamesList)}`);
   ul.innerHTML = '';
   // Loop through the array
-  for (let i = 0; i < arr.length; i++) {
+  for (let i = 0; i < gamesList.length; i++) {
+    console.log(`Listing game ${i}: ${JSON.stringify(gamesList[i])}`);
     let a = document.createElement('a');
-    a.setAttribute('href', `#game/${arr[i].game_id}`);
-    a.textContent = arr[i].name;
+    a.setAttribute('href', `#game/${gamesList[i].game_id}?week_id=${gamesList[i].week_id}`);
+    a.textContent = gamesList[i].name;
 
     let li = document.createElement('li');
     li.appendChild(a);
@@ -122,9 +135,11 @@ function generateGamesList(arr, ul) {
   }
 }
 
-function joinGame(gameId) {
-  console.log("Clicked game with id: " + gameId);
-  socket.emit('join_game', { game_id: gameId, player_id: playerId });
+function joinGame(game) {
+  const gameId = game.id;
+  const weekId = game.week_id;
+  console.log("Clicked game with id: " + game.id);
+  socket.emit('join_game', { week_id:weekId, game_id: gameId, player_id: playerId });
 
   // create the squares grid
   var table = document.getElementById('squares-grid');
@@ -140,6 +155,8 @@ function joinGame(gameId) {
       // Set data attributes for row and column numbers
       cell.setAttribute('data-row', i);
       cell.setAttribute('data-col', j);
+      cell.setAttribute('data-game-id', gameId);
+      cell.setAttribute('data-week-id', weekId);
 
       cell.addEventListener('click', claimSquare);
 
@@ -178,8 +195,8 @@ function registerSocketIOEventListeners() {
   });
 
   socket.on('connected', (data) => {
-    console.log(`Player info: ${JSON.stringify(data.player)}`);
-    console.log(`Games list: ${JSON.stringify(data.games_list)}`);
+    console.log(`Player info: ${data.player_id}`);
+    // console.log(`Games list: ${JSON.stringify(data.games_list)}`);
 
     const currentLocation = router.getCurrentLocation();
     console.log(`Current route location: ${JSON.stringify(currentLocation)}`);
@@ -189,31 +206,29 @@ function registerSocketIOEventListeners() {
     }
   });
 
-  socket.on('game_joined', (game) => {
-    console.log(`Game joined: ${JSON.stringify(game)}`);
+  socket.on('game_joined', (data) => {
+    console.log(`Game joined: ${JSON.stringify(data.game)}`);
+
+    const game = data.game;
 
     let gameIdH2 = document.querySelector('#app h2 span');
-    // let playerIdH3 = document.querySelector('#app h3 span');
     let gameNameH4 = document.querySelector('#app h4 span');
 
-    gameId = game.game_id;
-    // playerIdH3.textContent = playerId;
-    gameIdH2.textContent = gameId;
+    gameIdH2.textContent = game.id;
     gameNameH4.textContent = game.name;
 
-    let yourIdenticon = createIdenticon(playerId, 80);
+    let yourIdenticon = createIdenticon(getPlayerId(), 80);
     let yourIdenticonSpan = document.getElementById('your-identicon');
     yourIdenticonSpan.appendChild(yourIdenticon);
 
     // mark claimed squares
     const claimedSquares = game.claimed_squares;
-    for (const [key, value] of Object.entries(claimedSquares)) {
-      const claimedBy = value;
-      let [row, column] = key.split('');
+    for (const claimedSquare in claimedSquares) {
+      let [row, column] = claimedSquare.id.split('');
       const cell = selectTableCell(row, column);
-      let identicon = createIdenticon(claimedBy, 50);
+      let identicon = createIdenticon(claimedSquares[claimedSquare].player_id, 50);
       cell.appendChild(identicon);
-      // cell.removeEventListener('click', claimSquare);
+      cell.removeEventListener('click', claimSquare);
       cell.style.backgroundColor = 'yellow';
     }
 
@@ -222,11 +237,11 @@ function registerSocketIOEventListeners() {
     let playerList = document.getElementById('player-list');
     playerList.innerHTML = '';
 
-    for (const player in players) {
-      if (players[player].player_id !== playerId) {
+    for (const id in players) {
+      if (players[id] !== getPlayerId()) {
         let newPlayerLi = document.createElement('li');
 
-        let identicon = createIdenticon(players[player].player_id, 50);
+        let identicon = createIdenticon(players[id], 50);
         newPlayerLi.appendChild(identicon);
 
         playerList.appendChild(newPlayerLi);
@@ -234,10 +249,12 @@ function registerSocketIOEventListeners() {
     }
   });
 
-  socket.on('square_claimed', (data) => {
-    if (data.game_id === gameId) {
-      console.log(`Square claimed: ${JSON.stringify(data)}`);
-      const cell = selectTableCell(data.row, data.column);
+  socket.on('square_claimed', (square) => {
+    if (square.game_id === gameId) {
+      console.log(`Square claimed: ${JSON.stringify(square)}`);
+      // get digits from square.id
+      let [row, column] = square.id.split('');
+      const cell = selectTableCell(row, column);
 
       let rect = cell.getBoundingClientRect();
       let xPosition = rect.left + window.scrollX;
@@ -250,7 +267,7 @@ function registerSocketIOEventListeners() {
 
       explode(event);
 
-      let identicon = createIdenticon(data.claimed_by, 50);
+      let identicon = createIdenticon(square.player_id, 50);
       cell.appendChild(identicon);
       cell.removeEventListener('click', claimSquare);
       cell.style.backgroundColor = 'yellow';
@@ -265,7 +282,7 @@ function registerSocketIOEventListeners() {
     let newPlayerLi = document.createElement('li');
     newPlayerLi.classList.add('fade-in');
 
-    let identicon = createIdenticon(newPlayer.player_id, 50);
+    let identicon = createIdenticon(newPlayer.id, 50);
 
     newPlayerLi.appendChild(identicon);
     playerList.appendChild(newPlayerLi);
@@ -276,10 +293,10 @@ function registerSocketIOEventListeners() {
     const player = data.player;
     const game = data.game;
 
-    if (game.game_id === gameId) {
+    if (game.id === gameId) {
       console.log(`Player left game: ${JSON.stringify(player)}`);
 
-      let claimedSquares = player.games[gameId].claimed_squares;
+      let claimedSquares = player.claimed_squares;
 
       let i = 1;
       for (let square in claimedSquares) {
@@ -293,7 +310,7 @@ function registerSocketIOEventListeners() {
       let players = playerList.getElementsByTagName('li');
 
       for (let i = 0; i < players.length; i++) {
-        if (players[i].firstChild.getAttribute('data-jdenticon-value') === player.player_id) {
+        if (players[i].firstChild.getAttribute('data-jdenticon-value') === square.player_id) {
           setTimeout(() => {
             let rect = players[i].getBoundingClientRect();
             let xPosition = rect.left + window.scrollX;
@@ -316,8 +333,8 @@ function registerSocketIOEventListeners() {
 function unmarkSquare(square) {
   console.log(`Unmarking square: ${JSON.stringify(square)}`);
 
-  let { row, column } = square;
-  let cell = selectTableCell(row, column);
+  // let { row, column } = square;
+  let cell = selectTableCell(square.away_points, square.home_points);
 
   let rect = cell.getBoundingClientRect();
   let xPosition = rect.left + window.scrollX;
@@ -335,9 +352,9 @@ function unmarkSquare(square) {
   cell.addEventListener('click', claimSquare);
 }
 
-function unclaimSquare(square, gameId, playerId) {
+function unclaimSquare(square) {
   console.log(`Unclaiming square: ${JSON.stringify(square)}`);
-  socket.emit('unclaim_square', { square: square, game_id: gameId, player_id: playerId });
+  socket.emit('unclaim_square', square);
 }
 
 async function dollarsToEthereum(dollars) {
@@ -390,11 +407,10 @@ async function loadContractABI() {
 }
 
 async function loadGameList() {
-  return fetch(`${domain}/games?player_id=${playerId}`)
+  return fetch(`${domain}/games`)
     .then(response => response.json())
-    .then(data => {
-      // Use the loaded JSON data here
-      console.log(`The games list is ${JSON.stringify(data)}`)
+    .then(gamesList => {
+      generateGamesList(gamesList, document.getElementById('games-list'));
       return data;
     })
     .catch(error => {
@@ -415,19 +431,14 @@ document.addEventListener('DOMContentLoaded', () => {
   registerSocketIOEventListeners();
 
   router
-    .on("*", (match) => {
+    .on("/", (match) => {
       console.log(`Match value on home route: ${JSON.stringify(match)}`);
-
-      (async () => {
-        if (gameId) {
-          const gamesList = await loadGameList();
-          generateGamesList(gamesList, document.getElementById('games-list'));
-        }
-      })();
+      // generateGamesList(gamesList, document.getElementById('games-list'));
     }, {
       before(done, match) {
         (async () => {
           await loadTemplate("home.html", document.getElementById('app'));
+          await loadGameList();
           done();
         })();
       }
@@ -435,7 +446,12 @@ document.addEventListener('DOMContentLoaded', () => {
     .on("game/:gameId", (match) => {
       console.log(`Match value on game route: ${JSON.stringify(match)}`);
 
-      joinGame(match.data.gameId);
+      const game = {
+        id: match.data.gameId,
+        week_id: match.params.week_id
+      };
+
+      joinGame(game);
     }, {
       before(done, match) {
         (async () => {

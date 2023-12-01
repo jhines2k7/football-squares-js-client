@@ -65,6 +65,8 @@ cp -r lib $dist_folder
 # Copy the templates folder to the dist folder
 cp -r templates $dist_folder
 
+cp -r team_logos $dist_folder
+
 # Copy the HTML file to the dist folder
 cp $html_file $dist_folder
 
