@@ -7,8 +7,6 @@ let gameIdH2 = null;
 let playerIdH3 = null;
 let gameNameH4 = null;
 let GAME_ID = null;
-let weekId = null;
-let PLAYER = null;
 
 let heartbeatInterval;
 
@@ -30,7 +28,7 @@ function appendIdenticon(hashValue, size, targetElement) {
   jdenticon.update(identicon);
 }
 
-function getPlayerInfo() {
+function getPlayerId() {
   // Check if a GUID already exists in the cookie
   let guid = document.cookie.split('; ').find(row => row.startsWith('guid='));
 
@@ -48,16 +46,7 @@ function getPlayerInfo() {
     document.cookie = `guid=${guid}; level=1; expires=${date.toUTCString()}; path=/`;
   }
 
-  // Retrieve the level from the cookie
-  let level = document.cookie.split('; ').find(row => row.startsWith('level='));
-  if (level) {
-    level = parseInt(level.split('=')[1]);
-  } else {
-    // If level doesn't exist, set it to 0
-    level = 0;
-  }
-
-  return { guid, level };
+  return guid;
 }
 
 function generateGUID() {
@@ -75,8 +64,7 @@ function getCellPlayerId(cell) {
 }
 
 function claimSquare(event) {
-  // clearInterval(heartbeatInterval);
-  const playerId = getPlayerInfo().guid;
+  const playerId = getPlayerId();
   const row = event.currentTarget.getAttribute('data-row');
   const column = event.currentTarget.getAttribute('data-col');
   const gameId = event.currentTarget.getAttribute('data-game-id');
@@ -87,8 +75,8 @@ function claimSquare(event) {
   const cell = selectTableCell(row, column);
   const square = { 
     id: `${row}${column}`,
-    away_points: row, 
-    home_points: column,
+    away_points: column, 
+    home_points: row,
     player_id: playerId,
     game_id: gameId,
     week_id: weekId
@@ -97,29 +85,24 @@ function claimSquare(event) {
   // is cell already claimed?
   if (cell.innerHTML !== '') {
     // is cell claimed by current player?
-    if (getCellPlayerId(cell) === getPlayerInfo().guid) {
+    if (getCellPlayerId(cell) === getPlayerId()) {
       console.log(`Cell at row ${row}, column ${column} is already claimed by current player. Unclaiming square.`)
       // unclaim square
       unclaimSquare(square);
       unmarkSquare(square);
     }
+
     return;
   }
 
   explode(event);
 
-  let identicon = createIdenticon(getPlayerInfo().guid, 50);
+  let identicon = createIdenticon(getPlayerId(), 50);
 
   event.target.appendChild(identicon);
   // event.target.removeEventListener('click', claimSquare);
   event.target.style.backgroundColor = 'yellow';
 
-  // if (!heartbeatInterval) {
-  //   heartbeatInterval = setInterval(function () {
-  //     socket.emit('heartbeat', { player_id: playerId, ping: 'ping' })
-  //   }, 20000); // Send heartbeat every 20 seconds
-  // }
-  // row-major order, which means the value of the row is the first digit, and the value of the column is the second digit
   socket.emit('claim_square', square);
 }
 
@@ -144,7 +127,7 @@ function generateGamesList(games, ul) {
 
 function joinGame(game) {
   console.log("Joining game with id: " + game.id);
-  socket.emit('join_game', { week_id:game.week_id, game_id: game.id, player_level: getPlayerInfo().level, player_id: getPlayerInfo().guid });
+  socket.emit('join_game', { week_id:game.week_id, game_id: game.id, player_address: "", player_id: getPlayerId() });
 
   // create the squares grid
   var table = document.getElementById('squares-grid');
@@ -211,6 +194,26 @@ function registerSocketIOEventListeners() {
     // }
   });
 
+  socket.on('connect', () => {
+    console.log('Connected to the server.');
+    if (socket.recovered) {
+      console.log('Connection recovered. Replay events from last offset')
+    } else {
+      // new or unrecoverable session
+    }
+  });
+  
+  socket.on('disconnect', (reason) => {
+    console.log('Disconnected from the server:', reason);
+    // Handle disconnection
+    // The 'reason' argument provides why the client disconnected
+  });
+  
+  socket.on('reconnect', (attemptNumber) => {
+    console.log('Reconnected to the server after', attemptNumber, 'attempts');
+    // Handle successful reconnection
+  });
+
   socket.on('game_joined', (game) => {
     console.log(`Game joined: ${JSON.stringify(game)}`);
     GAME_ID = game.id;
@@ -223,7 +226,7 @@ function registerSocketIOEventListeners() {
     gameIdH2.textContent = game.id;
     gameNameH4.textContent = game.name;
 
-    let yourIdenticon = createIdenticon(getPlayerInfo().guid, 80);
+    let yourIdenticon = createIdenticon(getPlayerId(), 80);
     let yourIdenticonSpan = document.getElementById('your-identicon');
     yourIdenticonSpan.appendChild(yourIdenticon);
 
@@ -244,7 +247,7 @@ function registerSocketIOEventListeners() {
     playerList.innerHTML = '';
 
     for (const id in players) {
-      if (players[id] !== getPlayerInfo().guid) {
+      if (players[id] !== getPlayerId()) {
         let newPlayerLi = document.createElement('li');
 
         let identicon = createIdenticon(players[id], 50);
@@ -256,44 +259,50 @@ function registerSocketIOEventListeners() {
   });
 
   socket.on('square_claimed', (square) => {
-    console.log(`Square claimed: ${JSON.stringify(square)}`);
-    // get digits from square.id
-    let [row, column] = square.id.split('');
-    const cell = selectTableCell(row, column);
+    if(square.game_id === GAME_ID) {
+      console.log(`Square claimed: ${JSON.stringify(square)}`);
+      // get digits from square.id
+      let [row, column] = square.id.split('');
+      const cell = selectTableCell(row, column);
 
-    let rect = cell.getBoundingClientRect();
-    let xPosition = rect.left + window.scrollX;
-    let yPosition = rect.top + window.scrollY;
+      let rect = cell.getBoundingClientRect();
+      let xPosition = rect.left + window.scrollX;
+      let yPosition = rect.top + window.scrollY;
 
-    const event = {
-      clientX: xPosition + 25,
-      clientY: yPosition + 25
-    };
+      const event = {
+        clientX: xPosition + 25,
+        clientY: yPosition + 25
+      };
 
-    explode(event);
+      explode(event);
 
-    let identicon = createIdenticon(square.player_id, 50);
-    cell.appendChild(identicon);
-    cell.removeEventListener('click', claimSquare);
-    cell.style.backgroundColor = 'yellow';
+      let identicon = createIdenticon(square.player_id, 50);
+      cell.appendChild(identicon);
+      cell.removeEventListener('click', claimSquare);
+      cell.style.backgroundColor = 'yellow';
+    }
   });
 
   socket.on('square_unclaimed', (square) => {
-    console.log(`Square unclaimed: ${JSON.stringify(square)}`);
-    unmarkSquare(square);
+    if(square.game_id === GAME_ID) {
+      console.log(`Square unclaimed: ${JSON.stringify(square)}`);
+      unmarkSquare(square);
+    }    
   });
 
   socket.on('new_player_joined', (data) => {
-    console.log(`New player joined: ${JSON.stringify(data)}`);
+    if(data.game_id === GAME_ID) {
+      console.log(`New player joined: ${JSON.stringify(data)}`);
 
-    let playerList = document.getElementById('player-list');
-    let newPlayerLi = document.createElement('li');
-    newPlayerLi.classList.add('fade-in');
+      let playerList = document.getElementById('player-list');
+      let newPlayerLi = document.createElement('li');
+      newPlayerLi.classList.add('fade-in');
 
-    let identicon = createIdenticon(data.player_id, 50);
+      let identicon = createIdenticon(data.player_id, 50);
 
-    newPlayerLi.appendChild(identicon);
-    playerList.appendChild(newPlayerLi);
+      newPlayerLi.appendChild(identicon);
+      playerList.appendChild(newPlayerLi);
+    }
   });
 
   socket.on('player_left_game', (data) => {
@@ -330,6 +339,87 @@ function registerSocketIOEventListeners() {
           }, 1500);
         }
       }
+    }
+  });
+
+  socket.on('square_match', (data) => {
+    if(GAME_ID === data.square.game_id) {
+      console.log(`Square match: ${JSON.stringify(data)}`);
+
+      // let rect = document.getElementById('app').getBoundingClientRect();
+      // let xPosition = rect.left + window.scrollX;
+      // let yPosition = rect.top + window.scrollY;
+  
+      // const event = {
+      //   clientX: xPosition + 25,
+      //   clientY: yPosition + 25
+      // };
+  
+      // explode(event);
+  
+      let square = data.square;
+      let cell = selectTableCell(square.home_points, square.away_points);
+      cell.style.backgroundColor = 'green';
+      cell.removeEventListener('click', claimSquare);
+    }
+  });
+
+  socket.on('mark_claimed_square_match', (data) => {
+    if(GAME_ID === data.square.game_id) {
+      console.log(`Mark claimed square match: ${JSON.stringify(data)}`);
+
+      // let rect = document.getElementById('app').getBoundingClientRect();
+      // let xPosition = rect.left + window.scrollX;
+      // let yPosition = rect.top + window.scrollY;
+  
+      // const event = {
+      //   clientX: xPosition + 25,
+      //   clientY: yPosition + 25
+      // };
+  
+      // explode(event);
+  
+      let square = data.square;
+      let cell = selectTableCell(square.home_points, square.away_points);
+      cell.style.backgroundColor = 'red';
+      cell.removeEventListener('click', claimSquare);
+
+      ack_data = {
+        'square': square,
+        'player_id': getPlayerId(),
+        'event_num': data.event_num,
+        'event_name': 'mark_claimed_square_match'
+      }
+      console.log(`Sending ack_data: ${JSON.stringify(ack_data)}`);
+      callback(ack_data);
+    }
+  });
+
+  socket.on('mark_unclaimed_square_match', (data, ack) => {
+    if(GAME_ID === data.square.game_id) {
+      // console.log(`Mark unclaimed square match: ${JSON.stringify(data)}`);
+      console.log(`Event num: ${data.event_num}`);
+
+      // let rect = document.getElementById('app').getBoundingClientRect();
+      // let xPosition = rect.left + window.scrollX;
+      // let yPosition = rect.top + window.scrollY;
+  
+      // const event = {
+      //   clientX: xPosition + 25,
+      //   clientY: yPosition + 25
+      // };
+  
+      // explode(event);
+  
+      let square = data.square;
+      let cell = selectTableCell(square.home_points, square.away_points);
+      cell.style.backgroundColor = 'red';
+      cell.removeEventListener('click', claimSquare);
+      socket.auth.serverOffset = data.scoring_play.offset;
+      socket.auth.game_id = data.square.game_id;
+      socket.auth.week_id = data.square.week_id;
+
+      ack("Acknowledge from client");
     }
   });
 }
@@ -425,9 +515,12 @@ async function loadGameList() {
 document.addEventListener('DOMContentLoaded', () => {
   socket = io(domain,
     {
+      auth: {
+        serverOffset: 0
+      },
       transports: ['websocket'],
       query: {
-        player_id: getPlayerInfo().guid,
+        player_id: getPlayerId(),
       }
     });
 
@@ -479,9 +572,9 @@ document.addEventListener('DOMContentLoaded', () => {
       before(done, match) {
         socket.emit('leave_game', { 
           game_id: match.data.gameId, 
-          player_id: getPlayerInfo().guid, 
+          player_id: getPlayerId(), 
           week_id: match.params.week_id,
-          player_level: getPlayerInfo().level
+          player_address: ""
         });
         GAME_ID = null;
         done();
