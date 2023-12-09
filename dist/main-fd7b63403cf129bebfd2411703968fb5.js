@@ -201,6 +201,8 @@ function registerSocketIOEventListeners() {
     } else {
       // new or unrecoverable session
     }
+    console.log(`Current router state: ${JSON.stringify(router)}`);
+    console.log(`Last resolved route: ${JSON.stringify(router.lastResolved())}`);
   });
   
   socket.on('disconnect', (reason) => {
@@ -342,9 +344,10 @@ function registerSocketIOEventListeners() {
     }
   });
 
-  socket.on('square_match', (data) => {
+  socket.on('square_match', (data, ack) => {
     if(GAME_ID === data.square.game_id) {
-      console.log(`Square match: ${JSON.stringify(data)}`);
+      // console.log(`Square match: ${JSON.stringify(data)}`);
+      console.log(`Event num: ${data.event_num}`);
 
       // let rect = document.getElementById('app').getBoundingClientRect();
       // let xPosition = rect.left + window.scrollX;
@@ -361,6 +364,15 @@ function registerSocketIOEventListeners() {
       let cell = selectTableCell(square.home_points, square.away_points);
       cell.style.backgroundColor = 'green';
       cell.removeEventListener('click', claimSquare);
+
+      ack_data = {
+        // 'square': square,
+        'player_id': getPlayerId(),
+        'event_num': data.event_num,
+        'event_name': 'mark_claimed_square_match'
+      }
+      // console.log(`Sending ack_data: ${JSON.stringify(ack_data)}`);
+      ack(ack_data);
     }
   });
 
@@ -391,7 +403,7 @@ function registerSocketIOEventListeners() {
         'event_name': 'mark_claimed_square_match'
       }
       console.log(`Sending ack_data: ${JSON.stringify(ack_data)}`);
-      callback(ack_data);
+      // callback(ack_data);
     }
   });
 
@@ -419,7 +431,14 @@ function registerSocketIOEventListeners() {
       socket.auth.game_id = data.square.game_id;
       socket.auth.week_id = data.square.week_id;
 
-      ack("Acknowledge from client");
+      ack_data = {
+        // 'square': square,
+        'player_id': getPlayerId(),
+        'event_num': data.event_num,
+        'event_name': 'mark_claimed_square_match'
+      }
+      // console.log(`Sending ack_data: ${JSON.stringify(ack_data)}`);
+      ack(ack_data);
     }
   });
 }
