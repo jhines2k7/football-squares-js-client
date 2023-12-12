@@ -115,7 +115,7 @@ function generateGamesList(games, ul) {
   ul.innerHTML = '';
   for (let i = 0; i < games.length; i++) {
     let a = document.createElement('a');
-    a.setAttribute('href', `#game/${games[i].game_id}?week_id=${games[i].week_id}`);
+    a.setAttribute('href', `#/game/${games[i].game_id}?week_id=${games[i].week_id}`);
     a.textContent = games[i].name;
 
     let li = document.createElement('li');
@@ -201,8 +201,12 @@ function registerSocketIOEventListeners() {
     } else {
       // new or unrecoverable session
     }
+    router.getLast///
     console.log(`Current router state: ${JSON.stringify(router)}`);
-    console.log(`Last resolved route: ${JSON.stringify(router.lastResolved())}`);
+    console.log(`Router last resolved: ${JSON.stringify(router.lastResolved)}`);
+    
+    const currentLocation = router.getCurrentLocation();
+    console.log(`Current route location: ${JSON.stringify(currentLocation)}`);
   });
   
   socket.on('disconnect', (reason) => {
@@ -435,7 +439,7 @@ function registerSocketIOEventListeners() {
         // 'square': square,
         'player_id': getPlayerId(),
         'event_num': data.event_num,
-        'event_name': 'mark_claimed_square_match'
+        'event_name': 'mark_unclaimed_square_match'
       }
       // console.log(`Sending ack_data: ${JSON.stringify(ack_data)}`);
       ack(ack_data);
@@ -557,7 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })();
       }
     })
-    .on("game/:gameId", (match) => {
+    .on("/game/:gameId", (match) => {
       console.log(`Match value on game route: ${JSON.stringify(match)}`);
 
       const game = {
@@ -572,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
           await loadTemplate("game.html", document.getElementById('app'));
 
           let a = document.createElement('a');
-          a.setAttribute('href', `/leave/${match.data.gameId}?week_id=${match.params.week_id}`);
+          a.setAttribute('href', `#/leave/${match.data.gameId}?week_id=${match.params.week_id}`);
           a.setAttribute('data-navigo', '')
           a.textContent = 'Leave Game';
 
@@ -583,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })();
       }
     })
-    .on("leave/:gameId", (match) => {
+    .on("/leave/:gameId", (match) => {
       console.log(`Match value on leave route: ${JSON.stringify(match)}`);
 
       router.navigate('');
