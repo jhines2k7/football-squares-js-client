@@ -32,7 +32,7 @@
 
 #squares-grid {
   margin-top: 20px;
-  border: 2px solid black;
+  border: 5px solid black;
 }
 
 #squares-grid td {
@@ -117,4 +117,9 @@ td {
   left: -95px;
   width: 600%;
   height: auto;
+}
+
+#your-squares li{
+  display: inline;
+  margin-right: 5px;
 }
