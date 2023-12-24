@@ -26,13 +26,13 @@
 }
 
 #squares {
-  width: fit-content;
+  /* width: fit-content; */
   margin: 20px auto 0 auto;
 }
 
 #squares-grid {
-  margin-top: 20px;
-  border: 2px solid black;
+  margin: 20px auto 0 auto;
+  border: 5px solid black;
 }
 
 #squares-grid td {
@@ -87,4 +87,51 @@ td {
 @keyframes fade-out {
   from { opacity: 1; }
   to { opacity: 0; }
+}
+
+.team-logo.titans {
+  width: 50px;
+  height: 40px;
+  overflow: hidden;
+  position: relative;
+}
+
+.team-logo embed {
+  position: absolute;
+  top: -15px;
+  left: -20px;
+  width: 760%;
+  height: auto;
+}
+
+.team-logo.patriots {
+  width: 70px;
+  height: 60px;
+  overflow: hidden;
+  position: relative;
+}
+
+.team-logo.patriots embed {
+  position: absolute;
+  top: -10px;
+  left: -95px;
+  width: 600%;
+  height: auto;
+}
+
+#your-squares li{
+  display: inline;
+  margin-right: 5px;
+}
+
+@keyframes flash {
+  0% {opacity: 1;}
+  50% {opacity: 0.1;}
+  100% {opacity: 1;}
+}
+
+.flashing {
+  animation-name: flash;
+  animation-duration: 1s;
+  animation-iteration-count: infinite; /* to keep it flashing continuously */
 }

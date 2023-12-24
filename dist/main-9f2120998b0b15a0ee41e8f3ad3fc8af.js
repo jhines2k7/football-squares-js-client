@@ -8,7 +8,6 @@ let playerIdH3 = null;
 let gameNameH4 = null;
 let GAME_ID = null;
 let PLAYER_CLAIMED_SQUARES = {};
-let PLAYER_SQUARES_TO_UNCLIAM = {};
 const GRADIENT_COLORS = generateColorGradient();
 let CURRENT_COLOR_IDX = 0;
 const USD_PER_SQUARE = 20.00
@@ -17,7 +16,7 @@ let PLAYER_NONCE = "";
 
 let heartbeatInterval;
 
-const domain = 'http://localhost:8000';
+const domain = 'https://fs.generalsolutions43.com';
 
 const router = new Navigo('/', { hash: true });
 
@@ -56,27 +55,6 @@ function getPlayerId() {
   return guid;
 }
 
-function getPlayerNonce() {
-  // Check if a nonce already exists in the cookie
-  let nonce = document.cookie.split('; ').find(row => row.startsWith('nonce='));
-
-  // If a nonce exists, split the string to get the value
-  if (nonce) {
-    nonce = nonce.split('=')[1];
-  } else {
-    // If a nonce doesn't exist, generate a new one
-    nonce = web3.utils.randomHex(16);
-
-    // Save the new nonce to the cookie
-    // This cookie expires in 1 year
-    let date = new Date();
-    date.setFullYear(date.getFullYear() + 1);
-    document.cookie = `nonce=${nonce}; level=1; expires=${date.toUTCString()}; path=/`;
-  }
-
-  return nonce;
-}
-
 function generateGUID() {
   return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
     (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
@@ -97,7 +75,6 @@ function claimSquare(event) {
   const column = event.currentTarget.getAttribute('data-col');
   const gameId = event.currentTarget.getAttribute('data-game-id');
   const weekId = event.currentTarget.getAttribute('data-week-id');
-  const paid = event.currentTarget.getAttribute('data-paid');
 
   console.log('Clicked cell at row ' + row + ', col ' + column);
 
@@ -108,14 +85,13 @@ function claimSquare(event) {
     home_points: row,
     player_id: playerId,
     game_id: gameId,
-    week_id: weekId,
-    paid: paid,
+    week_id: weekId
   };
   
   // is cell already claimed?
   if (cell.innerHTML !== '') {
     // is cell claimed by current player?
-    if (getCellPlayerId(cell) === getPlayerId() && !paid) {
+    if (getCellPlayerId(cell) === getPlayerId()) {
       console.log(`Cell at row ${row}, column ${column} is already marked by current player. Unclaiming square.`)
       // unclaim square
       unclaimSquare(square);
@@ -291,7 +267,7 @@ function claimSquares() {
     }
     const playerMoveString = JSON.stringify(playerMove);
 
-    PLAYER_NONCE = getPlayerNonce();
+    PLAYER_NONCE = web3.utils.randomHex(16);
     console.log(`The playerMove as a string is ${playerMoveString + PLAYER_NONCE}`);
 
     const playerMoveHash = web3.utils.sha3(web3.utils.toHex(playerMoveString + PLAYER_NONCE), {encoding:"hex"});
@@ -371,20 +347,11 @@ function claimSquares() {
       transactionStatusP.classList.remove('flashing');
       // Transaction confirmed
       // console.log(`The confirmation number is ${confirmation}`);
-      socket.emit('squares_claimed', {
-        player_id: getPlayerId(),
-        contract_address: CONTRACT_ADDRESS,
-      });
-
-      // set a paid property on each cell in PLAYER_CLAIMED_SQUARES[GAME_ID]
-      for (let square in PLAYER_CLAIMED_SQUARES[GAME_ID]) {
-        let cell = selectTableCell(PLAYER_CLAIMED_SQUARES[GAME_ID][square].home_points, PLAYER_CLAIMED_SQUARES[GAME_ID][square].away_points);
-        cell.setAttribute('data-paid', 'true');
-      }
-
-      // clear #your-squares list
-      let yourSquaresList = document.getElementById('your-squares');
-      yourSquaresList.innerHTML = '';
+      // socket.emit('pay_stake_confirmation', {
+      //   game_id: gameId,
+      //   player_id: playerId,
+      //   contract_address: contractAddress,
+      // });
     });
 
     txHash.on('error', function (error) {
@@ -466,7 +433,6 @@ function joinGame(game) {
       cell.setAttribute('data-col', j);
       cell.setAttribute('data-game-id', game.id);
       cell.setAttribute('data-week-id', game.week_id);
-      cell.setAttribute('data-paid', 'false');
 
       cell.addEventListener('click', claimSquare);
 
@@ -874,7 +840,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, {
       before(done) {
         (async () => {
-          await loadTemplate("home.html", document.getElementById('app'));
+          await loadTemplate("home-9be2cf88fade78a0626c8f0f1babebc4.html", document.getElementById('app'));
           await loadGameList();
           done();
         })();
@@ -892,7 +858,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, {
       before(done, match) {
         (async () => {
-          await loadTemplate("game.html", document.getElementById('app'));
+          await loadTemplate("game-66bc4833b7700cbde4525f72d3a10ca8.html", document.getElementById('app'));
 
           let a = document.createElement('a');
           a.setAttribute('href', `#/leave/${match.data.gameId}?week_id=${match.params.week_id}`);
