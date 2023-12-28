@@ -8,9 +8,10 @@ let playerIdH3 = null;
 let gameNameH4 = null;
 let GAME_ID = null;
 let PLAYER_CLAIMED_SQUARES = {};
+let PLAYER_SQUARES_TO_UNCLAIM = {};
 const GRADIENT_COLORS = generateColorGradient();
 let CURRENT_COLOR_IDX = 0;
-const USD_PER_SQUARE = 20.00
+const USD_PER_SQUARE = 2.00
 let CONTRACT_ADDRESS = "0x40c6019F6D7b3328c3d0d3B49DD661FAc07c26F6";
 let PLAYER_NONCE = "";
 
@@ -55,6 +56,27 @@ function getPlayerId() {
   return guid;
 }
 
+function getPlayerNonce() {
+  // Check if a nonce already exists in the cookie
+  let nonce = document.cookie.split('; ').find(row => row.startsWith('nonce='));
+
+  // If a nonce exists, split the string to get the value
+  if (nonce) {
+    nonce = nonce.split('=')[1];
+  } else {
+    // If a nonce doesn't exist, generate a new one
+    nonce = web3.utils.randomHex(16);
+
+    // Save the new nonce to the cookie
+    // This cookie expires in 1 year
+    let date = new Date();
+    date.setFullYear(date.getFullYear() + 1);
+    document.cookie = `nonce=${nonce}; level=1; expires=${date.toUTCString()}; path=/`;
+  }
+
+  return nonce;
+}
+
 function generateGUID() {
   return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
     (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
@@ -75,18 +97,22 @@ function claimSquare(event) {
   const column = event.currentTarget.getAttribute('data-col');
   const gameId = event.currentTarget.getAttribute('data-game-id');
   const weekId = event.currentTarget.getAttribute('data-week-id');
-
-  console.log('Clicked cell at row ' + row + ', col ' + column);
+  const paid = JSON.parse(event.currentTarget.getAttribute('data-paid'));
 
   const cell = selectTableCell(row, column);
+  console.log(`Clicked cell at row: ${row}, col: ${column}`);
+
   const square = { 
     id: `${row}${column}`,
     away_points: column, 
     home_points: row,
     player_id: playerId,
     game_id: gameId,
-    week_id: weekId
+    week_id: weekId,
+    paid: paid,
   };
+
+  console.log(`Square: ${JSON.stringify(square)}`);
   
   // is cell already claimed?
   if (cell.innerHTML !== '') {
@@ -103,7 +129,7 @@ function claimSquare(event) {
   PLAYER_CLAIMED_SQUARES[gameId].push(square);
 
   // add a new li to the beginning of the #your-squares list
-  let yourSquares = document.getElementById('your-squares');
+  let yourSquares = document.getElementById('marked-squares');
   let newSquareLi = document.createElement('li');
   newSquareLi.textContent = square.id;
   yourSquares.insertBefore(newSquareLi, yourSquares.firstChild);
@@ -131,39 +157,218 @@ function claimSquare(event) {
 
 function unclaimSquare(square) {
   let cell = selectTableCell(square.home_points, square.away_points);
-  let rect = cell.getBoundingClientRect();
-  let xPosition = rect.left + window.scrollX;
-  let yPosition = rect.top + window.scrollY;
 
-  const event = {
-    clientX: xPosition + 25,
-    clientY: yPosition + 25
-  };
+  if(square.paid === true) {
+    // add square to PLAYER_SQUARES_TO_UNCLAIM
+    PLAYER_SQUARES_TO_UNCLAIM[square.game_id].push(square);
+    
+    // add a new li to the beginning of the #unclaim-squares list
+    let unclaimSquaresUL = document.getElementById('squares-to-unclaim');
+    let unclaimedSquareLI = document.createElement('li');
+    unclaimedSquareLI.textContent = square.id;
+    unclaimSquaresUL.appendChild(unclaimedSquareLI);
 
-  explode(event);
+    if(PLAYER_SQUARES_TO_UNCLAIM[square.game_id].length === 1) {
+      let unclaimSquaresButton = document.createElement('button');
+      unclaimSquaresButton.textContent = 'Unclaim Squares';
+      unclaimSquaresButton.addEventListener('click', unclaimSquares);
 
-  cell.style.backgroundColor = 'white';
-  cell.innerHTML = '';
-  cell.addEventListener('click', claimSquare);
-
-  // remove square from PLAYER_CLAIMED_SQUARES
-  const index = PLAYER_CLAIMED_SQUARES[square.game_id].findIndex(s => s.id === square.id);
-  // get the square from the array
-  const liToRemove = PLAYER_CLAIMED_SQUARES[square.game_id][index];
-  
-  PLAYER_CLAIMED_SQUARES[square.game_id].splice(index, 1);
-
-  // remove square from #your-squares list
-  let yourSquaresList = document.getElementById('your-squares');
-  let items = yourSquaresList.getElementsByTagName('li');
-  for (li in items) {
-    if (items[li].textContent === liToRemove.id) {
-      items[li].remove();
+      let unclaimButtonLI = document.createElement('li');
+      unclaimButtonLI.appendChild(unclaimSquaresButton);
+      unclaimSquaresUL.appendChild(unclaimButtonLI);
     }
-  }
 
-  console.log(`Unclaiming square: ${JSON.stringify(square)}`);
-  socket.emit('unclaim_square', square);
+    cell.style.backgroundColor = 'red';
+  } else {
+    let rect = cell.getBoundingClientRect();
+    let xPosition = rect.left + window.scrollX;
+    let yPosition = rect.top + window.scrollY;
+
+    const event = {
+      clientX: xPosition + 25,
+      clientY: yPosition + 25
+    };
+  
+    // cell.addEventListener('click', claimSquare);
+
+    cell.innerHTML = '';
+
+    explode(event);
+
+    cell.style.backgroundColor = 'white';
+
+    const index = PLAYER_CLAIMED_SQUARES[square.game_id].findIndex(s => s.id === square.id);
+    // get the square from the array
+    const liToRemove = PLAYER_CLAIMED_SQUARES[square.game_id][index];
+    console.log(`Removing square: ${JSON.stringify(liToRemove)}`);
+    
+    PLAYER_CLAIMED_SQUARES[square.game_id].splice(index, 1);
+
+    // remove square from #marked-squares list
+    let markedSquaresList = document.getElementById('marked-squares');
+    let items = markedSquaresList.getElementsByTagName('li');
+    for (li in items) {
+      if (items[li].textContent === liToRemove) {
+        items[li].remove();
+      }
+    }
+
+    console.log(`Unclaiming square: ${JSON.stringify(square)}`);
+    socket.emit('unclaim_square', square);
+  }
+}
+
+function difference(array1, array2) {
+  return array1.filter(item => !array2.includes(item));
+}
+
+function unclaimSquares() {
+  console.log(`Unclaiming squares: ${JSON.stringify(PLAYER_SQUARES_TO_UNCLAIM[GAME_ID])}`);
+
+  (async () => {
+    while (!window.ethereum) {
+      console.log('Waiting for MetaMask...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    // Request access to user's MetaMask accounts
+    await window.ethereum.request({ method: 'eth_requestAccounts' })
+
+    web3 = new Web3(window.ethereum);
+
+    // Use web3.js
+    accounts = await web3.eth.getAccounts();
+
+    console.log(`Your accounts: ${accounts}`);
+
+    // Fetch the FootballSquare contract abi
+    const contractABI = await loadContractABI();
+    const contract = new web3.eth.Contract(contractABI.abi, web3.utils.toChecksumAddress(CONTRACT_ADDRESS));
+
+    const nonce = await web3.eth.getTransactionCount(accounts[0]);
+    console.log(`The nonce for your address is ${nonce}`);
+
+    // Example usage:
+    // const list1 = [1, 2, 3, 4, 5];
+    // const list2 = [4, 5, 6, 7, 8];
+
+    // const diff1to2 = difference(list1, list2); // [1, 2, 3]
+    // const diff2to1 = difference(list2, list1); // [6, 7, 8]
+    const diff = difference(PLAYER_CLAIMED_SQUARES[GAME_ID], PLAYER_SQUARES_TO_UNCLAIM[GAME_ID]);
+
+    PLAYER_CLAIMED_SQUARES[GAME_ID] = [];
+    PLAYER_CLAIMED_SQUARES[GAME_ID] = diff;
+
+    const totalCostUSD = PLAYER_CLAIMED_SQUARES[GAME_ID].length * USD_PER_SQUARE;
+
+    const playerMove = {
+      'player_address': accounts[0],
+      'game_id': GAME_ID,
+      'claimed_squares': PLAYER_CLAIMED_SQUARES[GAME_ID],
+      'total_cost_in_usd': totalCostUSD,
+    }
+    const playerMoveString = JSON.stringify(playerMove);
+
+    PLAYER_NONCE = getPlayerNonce();
+    console.log(`The playerMove as a string is ${playerMoveString + PLAYER_NONCE}`);
+
+    const playerMoveHash = web3.utils.sha3(web3.utils.toHex(playerMoveString + PLAYER_NONCE), {encoding:"hex"});
+    console.log(`The playerMoveHash is ${playerMoveHash}`);
+
+    const encodedData = contract.methods.claimSquares(GAME_ID, accounts[0], playerMoveHash).encodeABI();
+    const transaction = {
+      'from': web3.utils.toChecksumAddress(accounts[0]),
+      'to': web3.utils.toChecksumAddress(CONTRACT_ADDRESS),
+      'value': '0x' + web3.utils.toBigInt(0).toString(16),
+      'nonce': nonce,
+      'data': encodedData,
+    };
+
+    try {
+      const gasEstimate = await web3.eth.estimateGas(transaction);
+      transaction['gas'] = gasEstimate;
+      console.log(`The gas estimate is ${gasEstimate}`);
+    } catch (error) {
+      console.error(`Error estimating gas: ${error}`);
+      
+      handleWeb3Error(error, contractAddress);
+
+      return;
+    }
+
+    const gasOracle = await getGasOracle();
+
+    // socket.emit('paying_stake', {
+    //   game_id: gameId,
+    //   player_id: playerId,
+    // });
+
+    const maxPriorityFeePerGas = parseInt(gasOracle.FastGasPrice) - parseInt(gasOracle.suggestBaseFee);
+    console.log(`The maxFeePerGas is ${maxPriorityFeePerGas}`);
+    
+    transaction['maxFeePerGas'] = web3.utils.toWei(gasOracle.SafeGasPrice, 'gwei');
+    transaction['maxPriorityFeePerGas'] = web3.utils.toWei(maxPriorityFeePerGas.toString(), 'gwei');
+    const txHash = web3.eth.sendTransaction(transaction);
+
+    txHash.catch((error) => {
+      console.error(JSON.stringify(error));
+
+      handleWeb3Error(error, contractAddress);
+    });
+
+    txHash.on('transactionHash', function (hash) {
+      let transactionStatusP = document.getElementById('transaction-status');
+      transactionStatusP.innerText = 'Transaction hash received. Waiting for transaction to be mined...';
+      transactionStatusP.classList.add('flashing');
+      // Transaction hash received
+      console.log(`The transaction hash is ${hash}`);
+      // socket.emit('pay_stake_hash', {
+      //   game_id: gameId,
+      //   transaction_hash: hash,
+      //   player_id: playerId,
+      //   contract_address: contractAddress,
+      // });
+    });
+
+    txHash.on('receipt', function (receipt) {
+      let transactionStatusP = document.getElementById('transaction-status');
+      transactionStatusP.innerText = 'Transaction receipt received. Transaction mined, waiting for confirmation...';
+      // Transaction receipt received
+      // console.log(`The receipt is ${receipt}`);
+      // socket.emit('pay_stake_receipt', {
+      //   game_id: gameId,
+      //   player_id: playerId,
+      //   address: accounts[0],
+      //   contract_address: contractAddress,
+      // });
+    });
+
+    txHash.on('confirmation', function (confirmation, receipt) {
+      let transactionStatusP = document.getElementById('transaction-status');
+      transactionStatusP.innerText = 'Transaction confirmed.';
+      transactionStatusP.classList.remove('flashing');
+
+      // set an unpaid property on each cell in PLAYER_UNCLAIMED_SQUARES[GAME_ID]
+      for (let square in PLAYER_SQUARES_TO_UNCLAIM[GAME_ID]) {
+        const currentSquare = PLAYER_SQUARES_TO_UNCLAIM[GAME_ID][square];
+        let cell = selectTableCell(currentSquare.home_points, currentSquare.away_points);
+        cell.setAttribute('data-paid', false);
+
+        unclaimSquare(currentSquare);
+      }
+
+      // clear #squares-to-unclaim list
+      let yourSquaresList = document.getElementById('squares-to-unclaim');
+      yourSquaresList.innerHTML = '';
+
+      socket.emit('unclaim_squares', { "squares_to_unclaim": PLAYER_SQUARES_TO_UNCLAIM[GAME_ID], "game_id": GAME_ID });
+    });
+
+    txHash.on('error', function (error) {
+      // Transaction error occurred
+      console.error(`An error occurred: ${error}`);
+    });
+  })();  
 }
 
 function handleWeb3Error(error, contractAddress) {
@@ -175,21 +380,21 @@ function handleWeb3Error(error, contractAddress) {
     dappError['error'] = error.error
   }
 
-  if (dappError.error.code === 4001) {
-    console.error(dappError.error.message);
-    // emit an event to the server to let the other player know you rejected the transaction
-    socket.emit('contract_rejected', {
-      game_id: gameId,
-      player_id: getPlayerId(),
-      contract_address: contractAddress,
-      error: error
-    });
+  // if (dappError.error.code === 4001) {
+  //   console.error(dappError.error.message);
+  //   // emit an event to the server to let the other player know you rejected the transaction
+  //   socket.emit('contract_rejected', {
+  //     game_id: gameId,
+  //     player_id: getPlayerId(),
+  //     contract_address: contractAddress,
+  //     error: error
+  //   });
 
-    payStakeStatusP.innerText = "You decided not to accept the contract. Your opponent has been notified. " +
-      "Refresh to start a new game.";
+  //   payStakeStatusP.innerText = "You decided not to accept the contract. Your opponent has been notified. " +
+  //     "Refresh to start a new game.";
 
-    payStakeStatusP.classList.remove('flashing');
-  }
+  //   payStakeStatusP.classList.remove('flashing');
+  // }
 
   if (dappError.error.code === -32000) {
     console.error(dappError.error.message);
@@ -202,7 +407,7 @@ function handleWeb3Error(error, contractAddress) {
     });
 
     payStakeStatusP.innerText = "Check your account balance. Your wallet may have insufficient funds for gas * price + value. This " +
-      " is sometimes due to a sudden increase in gas prices on the network. We've notified your opponent. Try again " +
+      "is sometimes due to a sudden increase in gas prices on the network. We've notified your opponent. Try again " +
       "in a few minutes or refresh now to start a new game.";
 
     payStakeStatusP.style.color = 'red';
@@ -267,7 +472,7 @@ function claimSquares() {
     }
     const playerMoveString = JSON.stringify(playerMove);
 
-    PLAYER_NONCE = web3.utils.randomHex(16);
+    PLAYER_NONCE = getPlayerNonce();
     console.log(`The playerMove as a string is ${playerMoveString + PLAYER_NONCE}`);
 
     const playerMoveHash = web3.utils.sha3(web3.utils.toHex(playerMoveString + PLAYER_NONCE), {encoding:"hex"});
@@ -347,11 +552,26 @@ function claimSquares() {
       transactionStatusP.classList.remove('flashing');
       // Transaction confirmed
       // console.log(`The confirmation number is ${confirmation}`);
-      // socket.emit('pay_stake_confirmation', {
-      //   game_id: gameId,
-      //   player_id: playerId,
-      //   contract_address: contractAddress,
-      // });
+      socket.emit('squares_claimed', {
+        player_id: getPlayerId(),
+        game_id: GAME_ID
+      });
+
+      // set a paid property on each cell in PLAYER_CLAIMED_SQUARES[GAME_ID]
+      for (let square in PLAYER_CLAIMED_SQUARES[GAME_ID]) {
+        let cell = selectTableCell(PLAYER_CLAIMED_SQUARES[GAME_ID][square].home_points, PLAYER_CLAIMED_SQUARES[GAME_ID][square].away_points);
+        cell.setAttribute('data-paid', true);
+
+        // add to #claimed-squares list
+        let claimedSquares = document.getElementById('claimed-squares');
+        let claimedSquareLi = document.createElement('li');
+        claimedSquareLi.textContent = PLAYER_CLAIMED_SQUARES[GAME_ID][square].id;
+        claimedSquares.appendChild(claimedSquareLi);
+      }
+
+      // clear #your-squares list
+      let yourSquaresList = document.getElementById('marked-squares');
+      yourSquaresList.innerHTML = '';
     });
 
     txHash.on('error', function (error) {
@@ -433,6 +653,7 @@ function joinGame(game) {
       cell.setAttribute('data-col', j);
       cell.setAttribute('data-game-id', game.id);
       cell.setAttribute('data-week-id', game.week_id);
+      cell.setAttribute('data-paid', false);
 
       cell.addEventListener('click', claimSquare);
 
@@ -461,10 +682,6 @@ async function loadTemplate(name, element) {
 }
 
 function registerSocketIOEventListeners() {
-  socket.on('heartbeat_response', (data) => {
-    console.log(`Heartbeat received: ${JSON.stringify(data)}`);
-  });
-
   socket.on('game_not_found', (data) => {
     console.log(`Game not found: ${JSON.stringify(data)}`);
     router.navigate('');
@@ -526,38 +743,68 @@ function registerSocketIOEventListeners() {
     // mark squares
     const claimedSquares = game.claimed_squares;
     PLAYER_CLAIMED_SQUARES[game.id] = [];
+    PLAYER_SQUARES_TO_UNCLAIM[game.id] = [];
+
+    let markedSquaresUL = document.getElementById('marked-squares');
+    markedSquaresUL.innerHTML = '';
+    let unclaimSquaresUL = document.getElementById('squares-to-unclaim');
+
     for (const square in claimedSquares) {
       const claimedBy = claimedSquares[square].player_id;
-
-      if(claimedBy === getPlayerId()) {
-        PLAYER_CLAIMED_SQUARES[game.id].push(claimedSquares[square]);
-      }
-
       let [row, column] = claimedSquares[square].id.split('');
       const cell = selectTableCell(row, column);
+      cell.style.backgroundColor = 'yellow';
+
+      if(claimedBy === getPlayerId()) {
+        if(claimedSquares[square].paid === false) {
+          let claimedSquareLI = document.createElement('li');
+          PLAYER_CLAIMED_SQUARES[GAME_ID].push(claimedSquares[square]);
+          claimedSquareLI.textContent = claimedSquares[square].id;
+          markedSquaresUL.appendChild(claimedSquareLI);
+        } else {
+          let squareToUnclaimLI = document.createElement('li');
+          PLAYER_SQUARES_TO_UNCLAIM[GAME_ID].push(claimedSquares[square]);       
+          squareToUnclaimLI.textContent = claimedSquares[square].id;
+          unclaimSquaresUL.appendChild(squareToUnclaimLI);
+          cell.setAttribute('data-paid', true);
+          cell.style.backgroundColor = 'green';
+        }
+      }
+
       let identicon = createIdenticon(claimedBy, 50);
       cell.appendChild(identicon);
-      cell.style.backgroundColor = 'yellow';
     }
 
     console.log(`Player claimed squares: ${JSON.stringify(PLAYER_CLAIMED_SQUARES)}`);
 
     // display claimed squares as list items in the #your-squares list
-    let yourSquares = document.getElementById('your-squares');
-    yourSquares.innerHTML = '';
-    for(square in PLAYER_CLAIMED_SQUARES[game.id]) {
-      let newSquareLi = document.createElement('li');
-      newSquareLi.textContent = PLAYER_CLAIMED_SQUARES[game.id][square].id;
-      yourSquares.appendChild(newSquareLi);
+    // let yourSquares = document.getElementById('marked-squares');
+    // yourSquares.innerHTML = '';
+    // for(square in PLAYER_CLAIMED_SQUARES[game.id]) {
+    //   let newSquareLi = document.createElement('li');
+    //   newSquareLi.textContent = PLAYER_CLAIMED_SQUARES[game.id][square].id;
+    //   yourSquares.appendChild(newSquareLi);
+    // }
+
+    if(PLAYER_CLAIMED_SQUARES[game.id].length > 0) {
+      let claimSquaresButton = document.createElement('button');
+      claimSquaresButton.textContent = 'Claim Squares';
+      claimSquaresButton.addEventListener('click', claimSquares);
+  
+      let claimButtonLI = document.createElement('li');
+      claimButtonLI.appendChild(claimSquaresButton);
+      markedSquaresUL.appendChild(claimButtonLI);
     }
 
-    let claimSquaresButton = document.createElement('button');
-    claimSquaresButton.textContent = 'Claim Squares';
-    claimSquaresButton.addEventListener('click', claimSquares);
-
-    let claimButtonLi = document.createElement('li');
-    claimButtonLi.appendChild(claimSquaresButton);
-    yourSquares.appendChild(claimButtonLi);
+    if(PLAYER_SQUARES_TO_UNCLAIM[game.id].length > 0) {
+      let unclaimSquaresButton = document.createElement('button');
+      unclaimSquaresButton.textContent = 'Unclaim Squares';
+      unclaimSquaresButton.addEventListener('click', unclaimSquares);
+  
+      let unclaimButtonLI = document.createElement('li');
+      unclaimButtonLI.appendChild(unclaimSquaresButton);
+      unclaimSquaresUL.appendChild(unclaimButtonLI);
+    }
 
     // display players
     const players = game.players;
@@ -858,7 +1105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, {
       before(done, match) {
         (async () => {
-          await loadTemplate("game-66bc4833b7700cbde4525f72d3a10ca8.html", document.getElementById('app'));
+          await loadTemplate("game-25f252cd1893b5152f782b745eb27832.html", document.getElementById('app'));
 
           let a = document.createElement('a');
           a.setAttribute('href', `#/leave/${match.data.gameId}?week_id=${match.params.week_id}`);

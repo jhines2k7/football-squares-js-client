@@ -119,7 +119,7 @@ td {
   height: auto;
 }
 
-#your-squares li{
+#marked-squares li, #claimed-squares li, #squares-to-unclaim li{
   display: inline;
   margin-right: 5px;
 }
