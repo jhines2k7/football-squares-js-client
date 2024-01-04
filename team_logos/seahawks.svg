@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="419.692 36 149.5079 66.1" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style type="text/css">
+	.st0{fill:#FFFFFF;}
+	.st1{fill:#010101;}
+	.st2{fill:#B11E3D;}
+	.st3{fill:#FFC316;}
+	.st4{fill:#DCE0E5;}
+	.st5{fill:#171514;}
+	.st6{fill:#B11E44;}
+	.st7{fill:#D1B333;}
+	.st8{fill:#2C2562;}
+	.st9{fill:#C6332C;}
+	.st10{fill:#DA2128;}
+	.st11{fill:#005496;}
+	.st12{fill-rule:evenodd;clip-rule:evenodd;fill:#1998D5;}
+	.st13{fill-rule:evenodd;clip-rule:evenodd;fill:#FFFFFF;}
+	.st14{fill-rule:evenodd;clip-rule:evenodd;}
+	.st15{fill-rule:evenodd;clip-rule:evenodd;fill:#C6CACE;}
+	.st16{fill:#EF4723;}
+	.st17{fill:#F37029;}
+	.st18{fill:none;}
+	.st19{clip-path:url(#SVGID_2_);fill-rule:evenodd;clip-rule:evenodd;fill:#EE4923;}
+	.st20{clip-path:url(#SVGID_2_);fill-rule:evenodd;clip-rule:evenodd;fill:#2C1B11;}
+	.st21{fill-rule:evenodd;clip-rule:evenodd;fill:#2C1B11;}
+	.st22{fill-rule:evenodd;clip-rule:evenodd;fill:#F7ECE6;}
+	.st23{fill-rule:evenodd;clip-rule:evenodd;fill:#EE4923;}
+	.st24{clip-path:url(#SVGID_4_);fill-rule:evenodd;clip-rule:evenodd;fill:#2C1B11;}
+	.st25{fill-rule:evenodd;clip-rule:evenodd;fill:#451613;}
+	.st26{fill-rule:evenodd;clip-rule:evenodd;fill:#631511;}
+	.st27{fill-rule:evenodd;clip-rule:evenodd;fill:#322417;}
+	.st28{clip-path:url(#SVGID_6_);fill-rule:evenodd;clip-rule:evenodd;fill:#322417;}
+	.st29{clip-path:url(#SVGID_6_);fill-rule:evenodd;clip-rule:evenodd;fill:#2C1B11;}
+	.st30{fill:#1B294B;}
+	.st31{fill-rule:evenodd;clip-rule:evenodd;fill:#1E196A;}
+	.st32{fill-rule:evenodd;clip-rule:evenodd;fill:#F58220;}
+	.st33{fill-rule:evenodd;clip-rule:evenodd;fill:#0086C5;}
+	.st34{fill:#FFD040;}
+	.st35{fill:#124734;}
+	.st36{fill:#FEFEFE;}
+	.st37{fill-rule:evenodd;clip-rule:evenodd;fill:#00143F;}
+	.st38{fill-rule:evenodd;clip-rule:evenodd;fill:#C9243F;}
+	.st39{fill:#003A70;}
+	.st40{clip-path:url(#SVGID_8_);}
+	.st41{clip-path:url(#SVGID_10_);}
+	.st42{clip-path:url(#SVGID_10_);fill:#175465;}
+	.st43{clip-path:url(#SVGID_10_);fill:#C9942B;}
+	.st44{clip-path:url(#SVGID_10_);fill:#8B6728;}
+	.st45{clip-path:url(#SVGID_10_);fill:none;stroke:#000000;stroke-width:5.325432e-02;}
+	.st46{clip-path:url(#SVGID_10_);fill:#FFFFFF;}
+	.st47{fill:#030303;}
+	.st48{fill:#E21D38;}
+	.st49{fill-rule:evenodd;clip-rule:evenodd;fill:#FFFEFE;}
+	.st50{fill-rule:evenodd;clip-rule:evenodd;fill:#0078BE;}
+	.st51{fill-rule:evenodd;clip-rule:evenodd;fill:#FFC20E;}
+	.st52{fill:#0A2343;}
+	.st53{fill:#015679;}
+	.st54{fill:#008D97;}
+	.st55{fill:#F58120;}
+	.st56{fill:#FFF200;}
+	.st57{fill:none;stroke:#ED1C24;stroke-width:3.869697e-02;}
+	.st58{fill:#402F83;}
+	.st59{fill:#F6D4B5;}
+	.st60{clip-path:url(#SVGID_12_);fill:#0063A5;}
+	.st61{clip-path:url(#SVGID_12_);fill:#FFFFFF;}
+	.st62{fill:#ED1C24;}
+	.st63{fill:#0063A5;}
+	.st64{fill:#DCDDDE;}
+	.st65{fill:#C6A876;}
+	.st66{fill:#B21F36;}
+	.st67{fill:#25326A;}
+	.st68{fill:#A6ACAF;}
+	.st69{clip-path:url(#SVGID_14_);}
+	.st70{clip-path:url(#SVGID_16_);fill:#044C52;}
+	.st71{clip-path:url(#SVGID_16_);}
+	.st72{clip-path:url(#SVGID_16_);fill:none;stroke:#000000;stroke-width:0.2671;}
+	.st73{clip-path:url(#SVGID_16_);fill:#FFFFFF;}
+	.st74{clip-path:url(#SVGID_16_);fill:#BCC3C9;}
+	.st75{clip-path:url(#SVGID_18_);}
+	.st76{fill:#B1B3B6;}
+	.st77{fill:#034EA2;}
+	.st78{fill:#FDB913;}
+	.st79{fill:#E03A3E;}
+	.st80{fill:#0B0B0B;}
+	.st81{fill:#C6A463;}
+	.st82{fill:#C8203D;}
+	.st83{clip-path:url(#SVGID_22_);fill:#FFFFFF;}
+	.st84{clip-path:url(#SVGID_22_);fill:#0A2343;}
+	.st85{fill:#6ABD45;}
+	.st86{fill:#A5ACAF;}
+	.st87{fill:#231F20;}
+	.st88{fill:#C1282D;}
+	.st89{fill:#9D9FA2;}
+	.st90{fill:#F26724;}
+	.st91{clip-path:url(#SVGID_24_);fill:#FFFFFF;}
+	.st92{fill:#1F3263;}
+	.st93{fill:#668FCA;}
+	.st94{fill:#C5C8D1;}
+	.st95{fill:#C02026;}
+	.st96{fill:#FCB515;}
+</style>
+  </defs>
+  <g>
+    <g>
+      <defs>
+        <rect id="SVGID_21_" x="419.7" y="36.1" width="149.3" height="66.1"/>
+      </defs>
+      <clipPath id="SVGID_22_">
+        <rect x="419.7" y="36.1" width="149.3" height="66.1" style="overflow: visible;"/>
+      </clipPath>
+      <path class="st83" d="M544.8,90.2c-6.8-1.4-15.7-1.7-19.5-1.7l-89.8,0c-5.6,0-11.4,0-14.3-4.6c-3-4.6-1.4-9.2,3.7-18.3 c0.4-0.7,15.8-29.6,15.8-29.6s1.6,2,3.2,3.2c1.6,1.2,3.2,1.9,7.5,1.9c7.6,0,56.7-0.1,57.2-0.1c10,0,20,1,26.6,8.2 c3.4,0.4,14.3,1.8,23.3,6.1c5.3,2.5,8.7,6.3,10.1,10.9c0.4,1.4,0.6,2.9,0.6,4.4c0,4.4-1.6,9.2-4.8,14.2 c-6.8,10.6-13,14.3-13.3,14.5c-3.8,2.7-7.6,2.8-7.6,2.8s3.4-3.8,4.5-7.6S544.8,90.2,544.8,90.2"/>
+      <path class="st84" d="M557.2,57.7c-10.3-4.9-23.5-6-23.5-6c-5.8-7-15.5-8.1-25.3-8.1c0,0-49.5,0.1-57.2,0.1c-9,0-9.9-3.6-9.9-3.6 l-12,22.5h31.2c9.8,0,10.3-1,16.8-5.8c6.9-5.1,12.4-6.9,19-6.9c6.5,0,10.9,1.5,18.1,4.7c7.3,3.2,11.1,4.8,15.5,2.9 c0,0-3.4,4.6-13.7,0.3c-10.3-4.3-13.1-5.2-19.3-5.2c-6.2,0-13.3,3-22.1,11.8l10.6,8.5c0,0-2.4,3.8-4.1,6.2c-1.6,2.4-1.5,4-0.6,5.2 c0.9,1.2,1.9,1.7,5.8,1.7c3.9,0,35.2-0.1,38.7-0.1c3,0,12.6,0.3,20,1.8c9.9,2,3.5,10.3,3.5,10.3s6.6-4.4,13.2-14.6 C569.3,71.9,567.5,62.6,557.2,57.7"/>
+    </g>
+    <path class="st0" d="M539.1,59.5c-4.7-1.1-0.7-3.8-0.7-3.8c-6.7,1.4-9.2,6.8-9.8,8.4c-0.1,0.2-0.2,0.4-0.3,0.6 c-3.7,7.5-7.1,7.1-13.4,7.1H504c-8.8,0-12.9,4.4-17.1,11.8h5c4.5-6.8,8-8.6,17-9.1c20.5,0,36.9,5.9,45.6,10.4 C566.7,64.2,548.4,60.8,539.1,59.5"/>
+    <path class="st0" d="M500.8,83.5c2.3-3.5,7-4.7,14.5-4.2c18.6,1.1,29.3,4.7,37.6,7.8c-10.2-6-28.5-10.3-41.2-10.3 c-6.2,0-11.6,1.1-14.8,6.7H500.8L500.8,83.5z"/>
+    <path class="st0" d="M520.8,63c-2.4,3.4-5.6,4.5-14.7,3.9c-10.5-0.7-7.8-5.2-6.6-7.3c0,0,0,0,0,0c0.3-0.6,0.9-1.7,1.5-2.7 c-8.1-0.5-14,5.7-14,5.7c6,6,10,6.6,15.5,6.6h10.2c9.5,0,11.7-4.3,12.6-6.1C523.7,63.2,522.2,63.2,520.8,63"/>
+    <path class="st85" d="M516.2,62c-0.2-0.1-0.4-0.2-0.6-0.2c-0.9,1-2.5,1.5-4.1,1.3c-2-0.3-3.2-1.7-2.6-3.3c0.1-0.2,0.2-0.4,0.3-0.7 c-1-0.4-2.1-0.8-3.1-1.2c-2.1,3.4-3.3,5.6,3.9,6.2c4.5,0.4,5.8-0.4,6.7-2C516.6,62.1,516.4,62.1,516.2,62"/>
+    <path class="st86" d="M479.7,74.9c-3.8,6.5-5.2,8-2.6,11.1h-41.6c-6.1,0-10.1-0.2-12.2-3.4c-2-3.1-1.6-6,3.8-15.7h35.3 c6.1,0,7.6,0.3,10.9,2.9C476.7,72.4,479.7,74.9,479.7,74.9"/>
+  </g>
+</svg>

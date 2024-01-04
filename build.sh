@@ -94,4 +94,14 @@ sed -i 's|'$(basename $js_file)'|'$(basename $new_js_file)'|g' $dist_folder/$htm
 sed -i 's|'$(basename $css_file)'|'$(basename $new_css_file)'|g' $dist_folder/$html_file
 sed -i 's|http://localhost:8000|https://'"$domain"'|g' $new_js_file
 
+# Function to minify files in dist folder excluding lib directory
+# minify_files() {
+#   find dist -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" \) ! -path "dist/lib/*" -exec minify --type={} --output '{}' '{}' \;
+# }
+
+# if [ "$environment" == "prod" ]; then
+#   # Minify JS, CSS, and HTML files excluding the lib directory
+#   minify_files
+# fi
+
 echo "Cache busting done. JS file copied to dist and HTML reference updated."
