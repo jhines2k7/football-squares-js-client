@@ -9,17 +9,14 @@ let gameNameH4 = null;
 let GAME_ID = null;
 let PLAYER_CLAIMED_SQUARES = {};
 let PLAYER_SQUARES_TO_UNCLAIM = {};
-const GRADIENT_COLORS = generateColorGradient();
 let CURRENT_COLOR_IDX = 0;
-const USD_PER_SQUARE = 4.00
 let CONTRACT_ADDRESS = "0x40c6019F6D7b3328c3d0d3B49DD661FAc07c26F6";
-let PLAYER_NONCE = "";
 let IDENTICON_SIZE = null;
-
 let heartbeatInterval;
 
 const domain = 'https://fs.generalsolutions43.com';
-
+const USD_PER_SQUARE = 4.00
+const GRADIENT_COLORS = generateColorGradient();
 const router = new Navigo('/', { hash: true });
 
 function createIdenticon(hashValue, size) {
@@ -146,6 +143,15 @@ function clickSquare(event) {
   }
 
   markedSquaresUL.insertBefore(newSquareLi, markedSquaresUL.firstChild);
+
+  // <span class="sticker" data-text="Steph" style="--shine-angle: 8deg;"><span>Steph</span></span>
+  let claimedSquares = document.getElementById('claimed-squares');
+  let claimedSquareSticker = document.createElement('span');
+  claimedSquareSticker.classList.add('sticker');
+  claimedSquareSticker.setAttribute('data-text', square.id);
+  claimedSquareSticker.setAttribute('style', '--shine-angle: 8deg;');
+  claimedSquareSticker.innerHTML = `<span>${square.id}</span>`;
+  claimedSquares.appendChild(claimedSquareSticker);
 
   const rect = cell.getBoundingClientRect();
   const xPosition = rect.left + window.scrollX;
@@ -779,14 +785,36 @@ function registerSocketIOEventListeners() {
 
   socket.on('game_joined', (game) => {
     console.log(`Game joined: ${JSON.stringify(game)}`);
-    console.log(`Color gradient: ${JSON.stringify(GRADIENT_COLORS)}`)
+    // console.log(`Color gradient: ${JSON.stringify(GRADIENT_COLORS)}`)
     GAME_ID = game.id;
 
-    let gameIdH2 = document.querySelector('#app h2 span');
-    let gameNameH4 = document.querySelector('#app h4 span');
+    const [awayTeam, homeTeam] = game.name.split(' vs ');
+    const [awayCity, awayTeamName] = awayTeam.split(' ');
+    const [homeCity, homeTeamName] = homeTeam.split(' ');
 
-    gameIdH2.textContent = game.id;
-    gameNameH4.textContent = game.name;
+    // create labels
+    let homeCityP = document.querySelector('#home-team-label p:nth-of-type(1)');
+    homeCityP.textContent = homeCity;
+    let homeTeamNameP = document.querySelector('#home-team-label p:nth-of-type(2)');
+    homeTeamNameP.textContent = homeTeamName;
+    let homeTeamLogo = document.querySelector('#home-team-label .team-logo');
+    homeTeamLogo.setAttribute('src', `team_logos/${homeTeamName.toLowerCase()}.svg`);
+
+    let awayCityP = document.querySelector('#away-team-label p:nth-of-type(1)');
+    awayCityP.textContent = awayCity;
+    let awayTeamNameP = document.querySelector('#away-team-label p:nth-of-type(2)');
+    awayTeamNameP.textContent = awayTeamName;
+    let awayTeamLogo = document.querySelector('#away-team-label .team-logo');
+    awayTeamLogo.setAttribute('src', `team_logos/${awayTeamName.toLowerCase()}.svg`);
+
+    let gameIdH2 = document.querySelector('.info h2');
+    gameIdH2.textContent = `Game ID: ${game.id}`;
+
+    let awayHeader = document.querySelector('#header .away-team');
+    awayHeader.textContent = awayTeam;
+
+    let homeHeader = document.querySelector('#header .home-team');
+    homeHeader.textContent = homeTeam;
 
     let yourIdenticon = createIdenticon(getPlayerId(), 80);
     let yourIdenticonSpan = document.getElementById('your-identicon');
@@ -797,11 +825,12 @@ function registerSocketIOEventListeners() {
     PLAYER_CLAIMED_SQUARES[game.id] = [];
     PLAYER_SQUARES_TO_UNCLAIM[game.id] = [];
 
-    let markedSquaresUL = document.getElementById('marked-squares');
-    markedSquaresUL.innerHTML = '';
+    let claimedSquaresDiv = document.getElementById('claimed-squares');
+    let markedSquaresDiv = document.getElementById('marked-squares');
 
-    // let claimedSquaresUL = document.getElementById('claimed-squares');
-    const claimedSquaresList = document.getElementById('claimed-squares');
+    let rotationAngle = 18;
+    let translateY = 5;
+    let translateX = -2;
 
     for (const item in claimedSquares) {
       const square = claimedSquares[item];
@@ -812,63 +841,97 @@ function registerSocketIOEventListeners() {
       cell.appendChild(identicon);
 
       if(claimedBy === getPlayerId()) {
-        if(!square.paid) {
-          let markedSquareLI = document.createElement('li');
-          PLAYER_CLAIMED_SQUARES[GAME_ID].push(square.id);
-          markedSquareLI.textContent = square.id;
-          markedSquaresUL.appendChild(markedSquareLI);
+        if (square.paid) {
+          let markedSquareSticker = document.createElement('span');
+          markedSquareSticker.classList.add('sticker');
+          markedSquareSticker.setAttribute('data-text', square.id);
+          markedSquareSticker.setAttribute('style', '--shine-angle: 8deg;');
+          markedSquareSticker.innerHTML = `<span>${square.id}</span>`;
+
+          markedSquareSticker.style.transform = `translateX(${translateX}px) translateY(${translateY}px) rotate(${rotationAngle}deg)`;
+
+          markedSquaresDiv.appendChild(markedSquareSticker);
+
+          let overlayHomeSticker = document.createElement('span');
+          overlayHomeSticker.classList.add('overlay-sticker', 'sticker', 'sticker-lg');
+          overlayHomeSticker.setAttribute('data-text', `H:${row}`);
+          overlayHomeSticker.setAttribute('style', '--shine-angle: 8deg;');
+          overlayHomeSticker.innerHTML = `<span>H:${row}</span>`;
+          overlayHomeSticker.style.transform = `translate(-50%, -90%) rotate(10deg)`;
+
+          let overlayAwaySticker = document.createElement('span');
+          overlayAwaySticker.classList.add('overlay-sticker', 'sticker', 'sticker-lg');
+          overlayAwaySticker.setAttribute('data-text', `V:${column}`);
+          overlayAwaySticker.setAttribute('style', '--shine-angle: 8deg;');
+          overlayAwaySticker.innerHTML = `<span>V:${column}</span>`;
+          overlayAwaySticker.style.transform = `translate(-50%, 0) rotate(-10deg)`;
+  
+          cell.appendChild(overlayHomeSticker);
+          cell.appendChild(overlayAwaySticker);
+          cell.setAttribute('data-paid', true);
+          cell.style.backgroundColor = '#F8F8FF';
+
+          rotationAngle *= -1;
+          translateY *= -1;
+          translateX += translateX;
+
+          continue;
         }
         
-        if (square.paid) {
-          let claimedSquaresLI = document.createElement('li');
-          claimedSquaresLI.textContent = square.id;
-          claimedSquaresList.appendChild(claimedSquaresLI);
-        }
-      }
+        let claimedSquareSticker = document.createElement('span');
+        claimedSquareSticker.classList.add('sticker');
+        claimedSquareSticker.setAttribute('data-text', square.id);
+        claimedSquareSticker.setAttribute('style', '--shine-angle: 8deg;');
+        claimedSquareSticker.innerHTML = `<span>${square.id}</span>`;
+        // alternate transform rotation between 45 and -45 degrees        
+        claimedSquareSticker.style.transform = `translateX(${translateX}px) translateY(${translateY}px) rotate(${rotationAngle}deg)`;
+        
+        claimedSquaresDiv.appendChild(claimedSquareSticker)
 
-      if (square.paid) {
-        // <span class="overlay-text">Your Text</span>
-        let overlayText = document.createElement('span');
-        overlayText.classList.add('overlay-text', 'seymour');
-        overlayText.innerHTML = `H: ${row}<br>V: ${column}`;
+        rotationAngle *= -1;
+        translateY *= -1;
+        translateX += translateX;
+      } else if (square.paid) {
+        // <span class="sticker" data-text="Steph" style="--shine-angle: 8deg;"><span>Steph</span></span>
+        let overlayHomeSticker = document.createElement('span');
+        overlayHomeSticker.classList.add('overlay-sticker', 'sticker', 'sticker-lg', 'sticker-bw');
+        overlayHomeSticker.setAttribute('data-text', `H:${row}`);
+        overlayHomeSticker.setAttribute('style', '--shine-angle: 8deg;');
+        overlayHomeSticker.innerHTML = `<span>H:${row}</span>`;
+        overlayHomeSticker.style.transform = `translate(-50%, -90%) rotate(10deg)`;
 
-        cell.appendChild(overlayText);
+        let overlayAwaySticker = document.createElement('span');
+        overlayAwaySticker.classList.add('overlay-sticker', 'sticker', 'sticker-lg', 'sticker-bw');
+        overlayAwaySticker.setAttribute('data-text', `V:${column}`);
+        overlayAwaySticker.setAttribute('style', '--shine-angle: 8deg;');
+        overlayAwaySticker.innerHTML = `<span>V:${column}</span>`;
+        overlayAwaySticker.style.transform = `translate(-50%, 0) rotate(-10deg)`;
+
+        cell.appendChild(overlayHomeSticker);
+        cell.appendChild(overlayAwaySticker);
         cell.setAttribute('data-paid', true);
-        cell.children[0].style.opacity = 0.5;
+        cell.style.backgroundColor = '#F8F8FF';
       }
-    }
-
-    // how many items in #claimed-squares list?
-    const claimedSquaresListItems = claimedSquaresList.getElementsByTagName('li');
-
-    if(claimedSquaresListItems.length > 0) {
-      let claimedSquaresP = document.createElement('p');
-      claimedSquaresP.textContent = 'Claimed Squares';
-      claimedSquaresList.insertBefore(claimedSquaresP, claimedSquaresList.firstChild);
     }
 
     console.log(`Player claimed squares: ${JSON.stringify(PLAYER_CLAIMED_SQUARES)}`);
-
-    // display claimed squares as list items in the #your-squares list
-    let yourSquares = document.getElementById('marked-squares');
-    yourSquares.innerHTML = '';
     
-    for(item in PLAYER_CLAIMED_SQUARES[game.id]) {
-      const squareId = PLAYER_CLAIMED_SQUARES[game.id][item];
-      let newSquareLi = document.createElement('li');
-      newSquareLi.textContent = squareId;
-      yourSquares.appendChild(newSquareLi);
-    }
+    // for(item in PLAYER_CLAIMED_SQUARES[game.id]) {
+    //   const squareId = PLAYER_CLAIMED_SQUARES[game.id][item];
+    //   let newSquareLi = document.createElement('li');
+    //   newSquareLi.textContent = squareId;
+    //   yourSquares.appendChild(newSquareLi);
+    // }
 
-    if(PLAYER_CLAIMED_SQUARES[game.id].length > 0) {
-      let claimSquaresButton = document.createElement('button');
-      claimSquaresButton.textContent = 'Claim Squares';
-      claimSquaresButton.addEventListener('click', claimSquares);
+    // if(PLAYER_CLAIMED_SQUARES[game.id].length > 0) {
+    //   let claimSquaresButton = document.createElement('button');
+    //   claimSquaresButton.textContent = 'Claim Squares';
+    //   claimSquaresButton.addEventListener('click', claimSquares);
   
-      let claimButtonLI = document.createElement('li');
-      claimButtonLI.appendChild(claimSquaresButton);
-      markedSquaresUL.appendChild(claimButtonLI);
-    }
+    //   let claimButtonLI = document.createElement('li');
+    //   claimButtonLI.appendChild(claimSquaresButton);
+    //   markedSquaresUL.appendChild(claimButtonLI);
+    // }
 
     // if(PLAYER_SQUARES_TO_UNCLAIM[game.id].length > 0) {
     //   let unclaimSquaresButton = document.createElement('button');
@@ -885,11 +948,12 @@ function registerSocketIOEventListeners() {
     let playerList = document.getElementById('player-list');
     playerList.innerHTML = '';
 
-    for (const id in players) {
-      if (players[id] !== getPlayerId()) {
+    for (const item in players) {
+      const player = players[item];
+      if (player.id !== getPlayerId()) {
         let newPlayerLi = document.createElement('li');
 
-        let identicon = createIdenticon(players[id], 50);
+        let identicon = createIdenticon(player.id, 50);
         newPlayerLi.appendChild(identicon);
 
         playerList.appendChild(newPlayerLi);
@@ -1203,8 +1267,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }, {
       before(done) {
         (async () => {
-          await loadTemplate("home-79264314082a00d5dab3b8de19afe139.html", document.getElementById('app'));
+          await loadTemplate("home-9be2cf88fade78a0626c8f0f1babebc4.html", document.getElementById('app'));
           await loadGameList();
+          
           done();
         })();
       }
@@ -1221,7 +1286,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, {
       before(done, match) {
         (async () => {
-          await loadTemplate("game-b5e9c8c22504ec4d1a8fe2b878ee61c2.html", document.getElementById('app'));
+          await loadTemplate("game-2b7ae0ad52ab2bfa4bfe810883ebd4ad.html", document.getElementById('app'));
 
           let a = document.createElement('a');
           a.setAttribute('href', `#/leave/${match.data.gameId}?week_id=${match.params.week_id}`);
