@@ -123,8 +123,8 @@ td {
 }
 
 #claimed-squares p {
-  margin: 0 5px 0 0;
-  display: inline;
+  text-align: center;
+  margin: 0 0 10px 0;
 }
 
 #players h3 {
@@ -244,11 +244,23 @@ td {
 }
 
 #claimed-squares {
-  flex-grow: 1;
+  width: 50%;
 }
 
 #marked-squares {
   margin: 0 20px 0 0;
+  width: 50%;
+}
+
+#marked-squares button {
+  display: block;
+  margin: 0 auto 10px auto;
+}
+
+#squares-claimed, #squares-marked {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr); /* Creates 10 columns */
+  grid-template-rows: repeat(10, 1fr); /* Creates 10 rows */
 }
 
 .home a {
@@ -273,7 +285,7 @@ td {
   font-family: "Alegreya Sans SC", sans-serif;
   font-weight: 900;
   font-style: italic;
-  font-size: clamp(1.5rem, 1.5rem, 1.5rem);
+  font-size: clamp(1rem, 1rem, 1rem);
   text-transform: uppercase;
   color: var(--c5);
 }
@@ -313,4 +325,46 @@ td {
 .sticker::after {
   text-shadow: 0.07em 0.08em 0.05em rgba(0, 0, 0, 0.75), -0.07em -0.05em 0.05em rgba(0, 0, 0, 0.75);
   z-index: -2;
+}
+
+/* <button class="button-52" role="button">Button 52</button> */
+
+/* CSS */
+.button-52 {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  padding: 3px 5px 3px;
+  outline: 0;
+  border: 1px solid black;
+  cursor: pointer;
+  position: relative;
+  background-color: rgba(0, 0, 0, 0);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.button-52:after {
+  content: "";
+  background-color: #ffe54c;
+  width: 100%;
+  z-index: -1;
+  position: absolute;
+  height: 100%;
+  top: 7px;
+  left: 7px;
+  transition: 0.2s;
+}
+
+.button-52:hover:after {
+  top: 0px;
+  left: 0px;
+}
+
+@media (min-width: 768px) {
+  .button-52 {
+    padding: 3px 5px 3px;
+  }
 }

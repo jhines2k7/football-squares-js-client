@@ -7,7 +7,7 @@ let gameIdH2 = null;
 let playerIdH3 = null;
 let gameNameH4 = null;
 let GAME_ID = null;
-let PLAYER_CLAIMED_SQUARES = {};
+let PLAYER_MARKED_SQUARES = {};
 let PLAYER_SQUARES_TO_UNCLAIM = {};
 let CURRENT_COLOR_IDX = 0;
 let CONTRACT_ADDRESS = "0x40c6019F6D7b3328c3d0d3B49DD661FAc07c26F6";
@@ -89,6 +89,10 @@ function getCellPlayerId(cell) {
   return cell.firstChild.getAttribute('data-jdenticon-value');
 }
 
+let stickerRotationAngle = 18;
+let stickerTranslateY = 5;
+let stickerTranslateX = -2;
+
 function clickSquare(event) {
   const playerId = getPlayerId();
   const row = event.currentTarget.getAttribute('data-row');
@@ -113,7 +117,7 @@ function clickSquare(event) {
   console.log(`Square: ${JSON.stringify(square)}`);
   
   // is cell already claimed?
-  if (cell.innerHTML !== '') {
+  if (getCellPlayerId(cell) !== '') {
     // is cell claimed by current player?
     if (getCellPlayerId(cell) === getPlayerId()) {
       console.log(`Cell at row ${row}, column ${column} is already marked by current player. Unclaiming square.`)
@@ -124,34 +128,33 @@ function clickSquare(event) {
     return;
   }
 
-  PLAYER_CLAIMED_SQUARES[gameId].push(square.id);
+  PLAYER_MARKED_SQUARES[gameId].push(square.id);
 
-  // add a new li to the beginning of the #your-squares list
-  let markedSquaresUL = document.getElementById('marked-squares');
-
-  let newSquareLi = document.createElement('li');
-  newSquareLi.textContent = square.id;
-
-  if(PLAYER_CLAIMED_SQUARES[gameId].length === 1) {
+  let squaresMarkedDiv = document.getElementById('squares-marked');
+  // add a button to claim squares if there are any squares to claim
+  if(PLAYER_MARKED_SQUARES[gameId].length === 1) {
     let claimSquaresButton = document.createElement('button');
-    claimSquaresButton.textContent = 'Claim Squares';
+    claimSquaresButton.textContent = 'Claim These Squares';
     claimSquaresButton.addEventListener('click', claimSquares);
-
-    let claimButtonLI = document.createElement('li');
-    claimButtonLI.appendChild(claimSquaresButton);
-    markedSquaresUL.appendChild(claimButtonLI);
+    claimSquaresButton.classList.add('button-52');
+    claimSquaresButton.setAttribute('role', 'button');
+    let markedSquaresDiv = document.getElementById('marked-squares');
+    markedSquaresDiv.prepend(claimSquaresButton);
   }
 
-  markedSquaresUL.insertBefore(newSquareLi, markedSquaresUL.firstChild);
-
   // <span class="sticker" data-text="Steph" style="--shine-angle: 8deg;"><span>Steph</span></span>
-  let claimedSquares = document.getElementById('claimed-squares');
-  let claimedSquareSticker = document.createElement('span');
-  claimedSquareSticker.classList.add('sticker');
-  claimedSquareSticker.setAttribute('data-text', square.id);
-  claimedSquareSticker.setAttribute('style', '--shine-angle: 8deg;');
-  claimedSquareSticker.innerHTML = `<span>${square.id}</span>`;
-  claimedSquares.appendChild(claimedSquareSticker);
+  let markedSquareSticker = document.createElement('span');
+  markedSquareSticker.classList.add('sticker');
+  markedSquareSticker.setAttribute('data-text', square.id);
+  markedSquareSticker.setAttribute('style', '--shine-angle: 8deg;');
+  markedSquareSticker.innerHTML = `<span>${square.id}</span>`;
+  markedSquareSticker.style.transform = `rotate(${stickerRotationAngle}deg)`;
+  
+  squaresMarkedDiv.appendChild(markedSquareSticker)
+
+  stickerRotationAngle *= -1;
+  stickerTranslateY *= -1;
+  stickerTranslateX += stickerTranslateX;
 
   const rect = cell.getBoundingClientRect();
   const xPosition = rect.left + window.scrollX;
@@ -235,24 +238,36 @@ function unclaimSquare(square) {
 
     // cell.style.backgroundColor = 'white';
 
-    const index = PLAYER_CLAIMED_SQUARES[square.game_id].findIndex(s => s === square.id);
+    const index = PLAYER_MARKED_SQUARES[square.game_id].findIndex(s => s === square.id);
     console.log(`Index of square to unclaim: ${index}`);
-    // get the square from the array
-    const liToRemove = PLAYER_CLAIMED_SQUARES[square.game_id][index];
-    console.log(`Removing square: ${JSON.stringify(liToRemove)}`);
+    const squareIdToRemove = PLAYER_MARKED_SQUARES[square.game_id][index];
+    console.log(`Removing square: ${JSON.stringify(squareIdToRemove)}`);
     
-    PLAYER_CLAIMED_SQUARES[square.game_id].splice(index, 1);
+    PLAYER_MARKED_SQUARES[square.game_id].splice(index, 1);
 
-    let markedSquaresList = document.getElementById('marked-squares');
-
-    if(PLAYER_CLAIMED_SQUARES[square.game_id].length === 0) {
-      markedSquaresList.innerHTML = '';
+    if(PLAYER_MARKED_SQUARES[square.game_id].length === 0) {
+      document.getElementById('marked-squares').innerHTML = '';
     } else {
-      // remove square from #marked-squares list
-      let items = markedSquaresList.getElementsByTagName('li');
-      for (li in items) {
-        if (items[li].textContent === liToRemove) {
-          items[li].remove();
+      // remove sticker from #squares-marked div
+      const stickers = document.querySelectorAll('#squares-marked .sticker');
+    
+      for(let i = 0; i < stickers.length; i++) {
+        console.log(`Sticker: ${stickers[i].textContent}`);
+        if (stickers[i].textContent === squareIdToRemove) {
+          const rect = stickers[i].getBoundingClientRect();
+          const xPosition = rect.left + window.scrollX;
+          const yPosition = rect.top + window.scrollY;
+        
+          const element = {
+            clientX: xPosition + (28 / 2),
+            clientY: yPosition + (28 / 2)
+          };
+        
+          stickers[i].remove();
+
+          explode(element);
+
+          break;
         }
       }
     }
@@ -298,17 +313,17 @@ function unclaimSquares() {
 
     // const diff1to2 = difference(list1, list2); // [1, 2, 3]
     // const diff2to1 = difference(list2, list1); // [6, 7, 8]
-    const diff = difference(PLAYER_CLAIMED_SQUARES[GAME_ID], PLAYER_SQUARES_TO_UNCLAIM[GAME_ID]);
+    const diff = difference(PLAYER_MARKED_SQUARES[GAME_ID], PLAYER_SQUARES_TO_UNCLAIM[GAME_ID]);
 
-    PLAYER_CLAIMED_SQUARES[GAME_ID] = [];
-    PLAYER_CLAIMED_SQUARES[GAME_ID] = diff;
+    PLAYER_MARKED_SQUARES[GAME_ID] = [];
+    PLAYER_MARKED_SQUARES[GAME_ID] = diff;
 
-    const totalCostUSD = PLAYER_CLAIMED_SQUARES[GAME_ID].length * USD_PER_SQUARE;
+    const totalCostUSD = PLAYER_MARKED_SQUARES[GAME_ID].length * USD_PER_SQUARE;
 
     const playerMove = {
       'player_address': accounts[0],
       'game_id': GAME_ID,
-      'claimed_squares': PLAYER_CLAIMED_SQUARES[GAME_ID],
+      'claimed_squares': PLAYER_MARKED_SQUARES[GAME_ID],
       'total_cost_in_usd': totalCostUSD,
     }
     const playerMoveString = JSON.stringify(playerMove);
@@ -478,7 +493,7 @@ function handleWeb3Error(error, contractAddress) {
 }
 
 function claimSquares() {
-  console.log(`Claiming squares: ${JSON.stringify(PLAYER_CLAIMED_SQUARES[GAME_ID])}`);
+  console.log(`Claiming squares: ${JSON.stringify(PLAYER_MARKED_SQUARES[GAME_ID])}`);
   (async () => {
     while (!window.ethereum) {
       console.log('Waiting for MetaMask...');
@@ -502,7 +517,7 @@ function claimSquares() {
     const nonce = await web3.eth.getTransactionCount(accounts[0]);
     console.log(`The nonce for your address is ${nonce}`);
 
-    const totalCostUSD = PLAYER_CLAIMED_SQUARES[GAME_ID].length * USD_PER_SQUARE;
+    const totalCostUSD = PLAYER_MARKED_SQUARES[GAME_ID].length * USD_PER_SQUARE;
     let totalCostInEther = await dollarsToEthereum(totalCostUSD);
     console.log(`The total cost in Ether is ${totalCostInEther}`);
     const totalCostInWei = web3.utils.toWei(totalCostInEther.toString(), 'ether');
@@ -511,7 +526,7 @@ function claimSquares() {
     const playerMove = {
       'player_address': accounts[0],
       'game_id': GAME_ID,
-      'claimed_squares': PLAYER_CLAIMED_SQUARES[GAME_ID],
+      'claimed_squares': PLAYER_MARKED_SQUARES[GAME_ID],
       'total_cost_in_usd': totalCostUSD,
     }
     const playerMoveString = JSON.stringify(playerMove);
@@ -587,9 +602,9 @@ function claimSquares() {
         game_id: GAME_ID
       });
 
-      // set a paid property on each cell in PLAYER_CLAIMED_SQUARES[GAME_ID]
-      for (let item in PLAYER_CLAIMED_SQUARES[GAME_ID]) {
-        const squareId = PLAYER_CLAIMED_SQUARES[GAME_ID][item];
+      // set a paid property on each cell in PLAYER_MARKED_SQUARES[GAME_ID]
+      for (let item in PLAYER_MARKED_SQUARES[GAME_ID]) {
+        const squareId = PLAYER_MARKED_SQUARES[GAME_ID][item];
         const [row, col] = squareId.split('');
         console.log(`Setting square ${row}, ${col} to paid`);
         let cell = selectTableCell(row, col);
@@ -822,11 +837,11 @@ function registerSocketIOEventListeners() {
 
     // mark squares
     const claimedSquares = game.claimed_squares;
-    PLAYER_CLAIMED_SQUARES[game.id] = [];
+    PLAYER_MARKED_SQUARES[game.id] = [];
     PLAYER_SQUARES_TO_UNCLAIM[game.id] = [];
 
-    let claimedSquaresDiv = document.getElementById('claimed-squares');
-    let markedSquaresDiv = document.getElementById('marked-squares');
+    let squaresClaimedDiv = document.getElementById('squares-claimed');
+    let squaresMarkedDiv = document.getElementById('squares-marked');
 
     let rotationAngle = 18;
     let translateY = 5;
@@ -840,17 +855,18 @@ function registerSocketIOEventListeners() {
       let identicon = createIdenticon(claimedBy, IDENTICON_SIZE);
       cell.appendChild(identicon);
 
-      if(claimedBy === getPlayerId()) {
+      if(claimedBy === getPlayerId()) {        
         if (square.paid) {
-          let markedSquareSticker = document.createElement('span');
-          markedSquareSticker.classList.add('sticker');
-          markedSquareSticker.setAttribute('data-text', square.id);
-          markedSquareSticker.setAttribute('style', '--shine-angle: 8deg;');
-          markedSquareSticker.innerHTML = `<span>${square.id}</span>`;
+          PLAYER_SQUARES_TO_UNCLAIM[game.id].push(square.id);
 
-          markedSquareSticker.style.transform = `translateX(${translateX}px) translateY(${translateY}px) rotate(${rotationAngle}deg)`;
+          let claimedSquareSticker = document.createElement('span');
+          claimedSquareSticker.classList.add('sticker');
+          claimedSquareSticker.setAttribute('data-text', square.id);
+          claimedSquareSticker.setAttribute('style', '--shine-angle: 8deg;');
+          claimedSquareSticker.innerHTML = `<span>${square.id}</span>`;
+          claimedSquareSticker.style.transform = `rotate(${rotationAngle}deg)`;
 
-          markedSquaresDiv.appendChild(markedSquareSticker);
+          squaresClaimedDiv.appendChild(claimedSquareSticker);
 
           let overlayHomeSticker = document.createElement('span');
           overlayHomeSticker.classList.add('overlay-sticker', 'sticker', 'sticker-lg');
@@ -877,16 +893,18 @@ function registerSocketIOEventListeners() {
 
           continue;
         }
+
+        PLAYER_MARKED_SQUARES[game.id].push(square.id);
         
-        let claimedSquareSticker = document.createElement('span');
-        claimedSquareSticker.classList.add('sticker');
-        claimedSquareSticker.setAttribute('data-text', square.id);
-        claimedSquareSticker.setAttribute('style', '--shine-angle: 8deg;');
-        claimedSquareSticker.innerHTML = `<span>${square.id}</span>`;
+        let markedSquareSticker = document.createElement('span');
+        markedSquareSticker.classList.add('sticker');
+        markedSquareSticker.setAttribute('data-text', square.id);
+        markedSquareSticker.setAttribute('style', '--shine-angle: 8deg;');
+        markedSquareSticker.innerHTML = `<span>${square.id}</span>`;
         // alternate transform rotation between 45 and -45 degrees        
-        claimedSquareSticker.style.transform = `translateX(${translateX}px) translateY(${translateY}px) rotate(${rotationAngle}deg)`;
+        markedSquareSticker.style.transform = `rotate(${rotationAngle}deg)`;
         
-        claimedSquaresDiv.appendChild(claimedSquareSticker)
+        squaresMarkedDiv.appendChild(markedSquareSticker)
 
         rotationAngle *= -1;
         translateY *= -1;
@@ -914,16 +932,37 @@ function registerSocketIOEventListeners() {
       }
     }
 
-    console.log(`Player claimed squares: ${JSON.stringify(PLAYER_CLAIMED_SQUARES)}`);
+    console.log(`Player claimed squares: ${JSON.stringify(PLAYER_MARKED_SQUARES)}`);
     
-    // for(item in PLAYER_CLAIMED_SQUARES[game.id]) {
-    //   const squareId = PLAYER_CLAIMED_SQUARES[game.id][item];
+    // <button class="button-52" role="button">Button 52</button>
+    if(PLAYER_MARKED_SQUARES[game.id].length > 0) {
+      let claimSquaresButton = document.createElement('button');
+      claimSquaresButton.textContent = 'Claim These Squares';
+      claimSquaresButton.addEventListener('click', claimSquares);
+      claimSquaresButton.classList.add('button-52');
+      claimSquaresButton.setAttribute('role', 'button');
+      let markedSquaresDiv = document.getElementById('marked-squares');
+      markedSquaresDiv.prepend(claimSquaresButton);
+    }
+
+    if(PLAYER_SQUARES_TO_UNCLAIM[game.id].length > 0) {
+      let unclaimSquaresButton = document.createElement('button');
+      unclaimSquaresButton.textContent = 'Unclaim These Squares';
+      unclaimSquaresButton.addEventListener('click', unclaimSquares);
+      unclaimSquaresButton.classList.add('button-52');
+      unclaimSquaresButton.setAttribute('role', 'button');
+      let claimedSquaresDiv = document.getElementById('claimed-squares');
+      claimedSquaresDiv.prepend(unclaimSquaresButton);
+    }
+
+    // for(item in PLAYER_MARKED_SQUARES[game.id]) {
+    //   const squareId = PLAYER_MARKED_SQUARES[game.id][item];
     //   let newSquareLi = document.createElement('li');
     //   newSquareLi.textContent = squareId;
     //   yourSquares.appendChild(newSquareLi);
     // }
 
-    // if(PLAYER_CLAIMED_SQUARES[game.id].length > 0) {
+    // if(PLAYER_MARKED_SQUARES[game.id].length > 0) {
     //   let claimSquaresButton = document.createElement('button');
     //   claimSquaresButton.textContent = 'Claim Squares';
     //   claimSquaresButton.addEventListener('click', claimSquares);
