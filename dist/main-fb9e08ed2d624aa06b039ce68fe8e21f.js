@@ -14,7 +14,7 @@ let CONTRACT_ADDRESS = "0x40c6019F6D7b3328c3d0d3B49DD661FAc07c26F6";
 let IDENTICON_SIZE = null;
 let heartbeatInterval;
 
-const domain = 'http://localhost:8000';
+const domain = 'https://fs.generalsolutions43.com';
 const USD_PER_SQUARE = 4.00
 const GRADIENT_COLORS = generateColorGradient();
 const router = new Navigo('/', { hash: true });
@@ -1306,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, {
       before(done) {
         (async () => {
-          await loadTemplate("home.html", document.getElementById('app'));
+          await loadTemplate("home-9be2cf88fade78a0626c8f0f1babebc4.html", document.getElementById('app'));
           await loadGameList();
           
           done();
@@ -1325,7 +1325,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, {
       before(done, match) {
         (async () => {
-          await loadTemplate("game.html", document.getElementById('app'));
+          await loadTemplate("game-5b4a150eadb79e80719294d69cd2ef0a.html", document.getElementById('app'));
 
           let a = document.createElement('a');
           a.setAttribute('href', `#/leave/${match.data.gameId}?week_id=${match.params.week_id}`);
