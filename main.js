@@ -117,9 +117,9 @@ function clickSquare(event) {
   console.log(`Square: ${JSON.stringify(square)}`);
   
   // is cell already claimed?
-  if (getCellPlayerId(cell) !== '') {
+  if (cell.firstChild !== null) {
     // is cell claimed by current player?
-    if (getCellPlayerId(cell) === getPlayerId()) {
+    if (cell.firstChild.getAttribute('data-jdenticon-value') === getPlayerId()) {
       console.log(`Cell at row ${row}, column ${column} is already marked by current player. Unclaiming square.`)
       // unclaim square
       unclaimSquare(square);
